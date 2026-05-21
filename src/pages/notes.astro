@@ -1,0 +1,75 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Effects from '../components/Effects.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+
+const notes = [
+	'把新文章先写成短笔记，等结构稳定后再整理成长文。',
+	'项目页先记录状态和动机，后续再补截图、仓库链接和复盘。',
+	'站点下一步可以补标签页、搜索、代码高亮主题和部署说明。',
+	'中文内容要优先检查标题、摘要、日期和 RSS 是否一致。',
+];
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<BaseHead title={`笔记 — ${SITE_TITLE}`} description="Yunis 的短笔记和待办想法。" />
+	</head>
+	<body>
+		<Effects />
+		<Header />
+		<main>
+			<section class="hero">
+				<p class="eyebrow reveal">碎片</p>
+				<h1 class="reveal" style="--reveal-delay: 100ms"><em>笔记</em>本</h1>
+				<p class="lede reveal" style="--reveal-delay: 200ms">还没整理成长文的短记录：想法、资料链接、待办事项、写作线索。</p>
+			</section>
+
+			<section>
+				<ul class="note-list">
+					{notes.map((note, i) => (
+						<li class="reveal spotlight" style={`--reveal-delay: ${i * 100}ms`}>
+							<span class="ix">#{String(i + 1).padStart(2, '0')}</span>
+							<p>{note}</p>
+						</li>
+					))}
+				</ul>
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.hero { padding: 2rem 0 4rem; max-width: 720px; }
+	.hero h1 em { font-style: italic; color: rgb(var(--accent)); }
+	.lede { font-size: 1.05rem; color: rgb(var(--ink-soft)); }
+
+	.note-list {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 1.25rem;
+		list-style: none; padding: 0; margin: 0;
+	}
+	.note-list li {
+		position: relative;
+		padding: 1.5rem 1.6rem 1.6rem;
+		display: flex; flex-direction: column;
+		min-height: 160px;
+	}
+	.ix {
+		font-family: var(--font-mono);
+		font-size: 0.72rem; letter-spacing: 0.12em;
+		color: rgb(var(--accent));
+	}
+	.note-list p {
+		margin: 0.8rem 0 0;
+		font-family: var(--font-display);
+		font-size: 1.15rem; line-height: 1.55;
+		color: rgb(var(--ink));
+	}
+	@media (max-width: 720px) { .note-list { grid-template-columns: 1fr; } }
+</style>

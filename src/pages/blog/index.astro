@@ -2,10 +2,11 @@
 import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
+import Effects from '../../components/Effects.astro';
 import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+import { SITE_TITLE } from '../../consts';
 
 const posts = (await getCollection('blog')).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
@@ -13,102 +14,106 @@ const posts = (await getCollection('blog')).sort(
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-		<style>
-			main {
-				width: 960px;
-			}
-			ul {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 2rem;
-				list-style-type: none;
-				margin: 0;
-				padding: 0;
-			}
-			ul li {
-				width: calc(50% - 1rem);
-			}
-			ul li * {
-				text-decoration: none;
-				transition: 0.2s ease;
-			}
-			ul li:first-child {
-				width: 100%;
-				margin-bottom: 1rem;
-				text-align: center;
-			}
-			ul li:first-child img {
-				width: 100%;
-			}
-			ul li:first-child .title {
-				font-size: 2.369rem;
-			}
-			ul li img {
-				margin-bottom: 0.5rem;
-				border-radius: 12px;
-			}
-			ul li a {
-				display: block;
-			}
-			.title {
-				margin: 0;
-				color: rgb(var(--black));
-				line-height: 1;
-			}
-			.date {
-				margin: 0;
-				color: rgb(var(--gray));
-			}
-			ul li a:hover h4,
-			ul li a:hover .date {
-				color: rgb(var(--accent));
-			}
-			ul a:hover img {
-				box-shadow: var(--box-shadow);
-			}
-			@media (max-width: 720px) {
-				ul {
-					gap: 0.5em;
-				}
-				ul li {
-					width: 100%;
-					text-align: center;
-				}
-				ul li:first-child {
-					margin-bottom: 0;
-				}
-				ul li:first-child .title {
-					font-size: 1.563em;
-				}
-			}
-		</style>
+		<BaseHead title={`文章 — ${SITE_TITLE}`} description="Yunis 的博客文章归档。" />
 	</head>
 	<body>
+		<Effects />
 		<Header />
 		<main>
+			<section class="page-heading">
+				<p class="eyebrow reveal">归档</p>
+				<h1 class="reveal" style="--reveal-delay: 100ms">所有<em>文章</em></h1>
+				<p class="lede reveal" style="--reveal-delay: 200ms">完整的写作记录，按时间倒序排列。从最新的尝试到早期的构思。</p>
+			</section>
+
 			<section>
-				<ul>
-					{
-						posts.map((post) => (
-							<li>
-								<a href={`/blog/${post.id}/`}>
-									{post.data.heroImage && (
-										<Image width={720} height={360} src={post.data.heroImage} alt="" />
-									)}
-									<h4 class="title">{post.data.title}</h4>
-									<p class="date">
-										<FormattedDate date={post.data.pubDate} />
-									</p>
-								</a>
-							</li>
-						))
-					}
+				<ul class="post-feed">
+					{posts.map((post, i) => (
+						<li class="reveal" style={`--reveal-delay: ${i * 80}ms`}>
+							<a class="row" href={`/blog/${post.id}/`}>
+								<div class="row-meta">
+									<span class="num">{String(i + 1).padStart(2, '0')}</span>
+									<FormattedDate date={post.data.pubDate} />
+								</div>
+								<div class="row-main">
+									<h2 class="row-title">{post.data.title}</h2>
+									<p class="row-desc">{post.data.description}</p>
+								</div>
+								{post.data.heroImage && (
+									<div class="row-thumb">
+										<Image width={400} height={260} src={post.data.heroImage} alt={post.data.title} />
+									</div>
+								)}
+								<span class="row-arrow" aria-hidden="true">→</span>
+							</a>
+						</li>
+					))}
 				</ul>
 			</section>
 		</main>
 		<Footer />
 	</body>
 </html>
+
+<style>
+	.page-heading { padding: 2rem 0 4rem; }
+	.page-heading h1 em { font-style: italic; color: rgb(var(--accent)); }
+	.lede { max-width: 600px; color: rgb(var(--ink-soft)); font-size: 1.05rem; }
+
+	.post-feed { list-style: none; margin: 0; padding: 0; }
+	.post-feed li { border-top: 1px solid rgb(var(--line)); }
+	.post-feed li:last-child { border-bottom: 1px solid rgb(var(--line)); }
+
+	.row {
+		display: grid;
+		grid-template-columns: 160px 1fr 200px 32px;
+		gap: 2rem; align-items: center;
+		padding: 2rem 0.5rem;
+		color: rgb(var(--ink));
+		position: relative;
+		transition: padding 0.5s var(--ease), background 0.5s var(--ease);
+	}
+	.row::before {
+		content: ""; position: absolute; inset: 0;
+		background: linear-gradient(90deg, transparent, rgba(var(--accent), 0.05), transparent);
+		opacity: 0; transition: opacity 0.5s var(--ease);
+		pointer-events: none;
+	}
+	.row:hover::before { opacity: 1; }
+	.row:hover { padding-left: 1.5rem; }
+	.row:hover .row-arrow { transform: translateX(6px); color: rgb(var(--accent)); }
+	.row:hover .row-title { color: rgb(var(--accent)); }
+	.row:hover .row-thumb img { transform: scale(1.05); }
+
+	.row-meta { display: flex; flex-direction: column; gap: 0.4rem; color: rgb(var(--muted)); font-size: 0.85rem; }
+	.num { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.1em; }
+
+	.row-title {
+		margin: 0 0 0.35rem;
+		font-size: 1.6rem; line-height: 1.2;
+		transition: color 0.4s var(--ease);
+	}
+	.row-desc { margin: 0; color: rgb(var(--ink-soft)); font-size: 0.95rem; }
+
+	.row-thumb { overflow: hidden; border-radius: var(--radius-sm); }
+	.row-thumb img {
+		display: block; width: 100%; height: 130px;
+		object-fit: cover; transition: transform 0.7s var(--ease-out);
+	}
+
+	.row-arrow {
+		font-size: 1.2rem; color: rgb(var(--muted));
+		transition: transform 0.4s var(--ease), color 0.4s var(--ease);
+		text-align: right;
+	}
+
+	@media (max-width: 820px) {
+		.row { grid-template-columns: 1fr; gap: 0.8rem; padding: 1.5rem 0; }
+		.row:hover { padding-left: 0; }
+		.row-thumb { display: none; }
+		.row-arrow { display: none; }
+		.row-meta { flex-direction: row; gap: 1rem; }
+	}
+</style>

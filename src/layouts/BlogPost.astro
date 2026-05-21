@@ -2,6 +2,7 @@
 import { Image } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
+import Effects from '../components/Effects.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
@@ -11,74 +12,92 @@ type Props = CollectionEntry<'blog'>['data'];
 const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 ---
 
-<html lang="en">
+<html lang="zh-CN">
 	<head>
 		<BaseHead title={title} description={description} />
 		<style>
-			main {
-				width: calc(100% - 2em);
-				max-width: 100%;
-				margin: 0;
+			.post-main {
+				max-width: var(--container-narrow);
+				padding-top: 4rem;
+			}
+			.post-meta {
+				display: flex; align-items: center; gap: 1rem;
+				font-size: 0.85rem; color: rgb(var(--muted));
+				letter-spacing: 0.05em; margin-bottom: 1.2rem;
+			}
+			.post-meta .sep { opacity: 0.5; }
+			.post-title {
+				font-size: clamp(2rem, 4.5vw, 3.4rem);
+				line-height: 1.1; letter-spacing: -0.03em;
+				margin: 0 0 1rem;
+			}
+			.post-desc {
+				font-family: var(--font-display);
+				font-size: 1.25rem; line-height: 1.55;
+				color: rgb(var(--ink-soft));
+				font-style: italic;
+				margin: 0 0 3rem;
+				padding-bottom: 2rem;
+				border-bottom: 1px solid rgb(var(--line));
 			}
 			.hero-image {
-				width: 100%;
+				margin: 0 0 3rem;
+				overflow: hidden;
+				border-radius: var(--radius);
+				border: 1px solid rgb(var(--line));
 			}
-			.hero-image img {
-				display: block;
-				margin: 0 auto;
-				border-radius: 12px;
-				box-shadow: var(--box-shadow);
+			.hero-image :global(img) {
+				display: block; width: 100%; height: auto;
+				transition: transform 1s var(--ease-out);
 			}
-			.prose {
-				width: 720px;
-				max-width: calc(100% - 2em);
-				margin: auto;
-				padding: 1em;
-				color: rgb(var(--gray-dark));
+			.hero-image:hover :global(img) { transform: scale(1.02); }
+			.prose { font-size: 1.05rem; }
+			.prose :global(h2) { margin-top: 2.5rem; font-size: 1.6rem; }
+			.prose :global(h3) { margin-top: 2rem; }
+			.prose :global(p) { color: rgb(var(--ink-soft)); }
+			.prose :global(a) {
+				color: rgb(var(--ink));
+				background-image: linear-gradient(rgb(var(--accent)), rgb(var(--accent)));
+				background-size: 100% 1px; background-position: 0 100%;
+				background-repeat: no-repeat;
+				transition: background-size 0.4s var(--ease);
 			}
-			.title {
-				margin-bottom: 1em;
-				padding: 1em 0;
-				text-align: center;
-				line-height: 1;
+			.prose :global(a:hover) { background-size: 100% 100%; color: rgb(var(--bg)); }
+			.updated { font-style: italic; color: rgb(var(--muted)); }
+			.back {
+				display: inline-flex; align-items: center; gap: 0.4rem;
+				margin: 4rem 0 0;
+				font-size: 0.9rem; color: rgb(var(--ink-soft));
 			}
-			.title h1 {
-				margin: 0 0 0.5em 0;
-			}
-			.date {
-				margin-bottom: 0.5em;
-				color: rgb(var(--gray));
-			}
-			.last-updated-on {
-				font-style: italic;
-			}
+			.back .arrow { transition: transform 0.4s var(--ease); display: inline-block; }
+			.back:hover .arrow { transform: translateX(-6px); }
 		</style>
 	</head>
 
 	<body>
+		<Effects />
 		<Header />
-		<main>
+		<main class="post-main">
 			<article>
-				<div class="hero-image">
-					{heroImage && <Image width={1020} height={510} src={heroImage} alt="" />}
-				</div>
-				<div class="prose">
-					<div class="title">
-						<div class="date">
-							<FormattedDate date={pubDate} />
-							{
-								updatedDate && (
-									<div class="last-updated-on">
-										Last updated on <FormattedDate date={updatedDate} />
-									</div>
-								)
-							}
-						</div>
-						<h1>{title}</h1>
-						<hr />
+				<div class="reveal">
+					<div class="post-meta">
+						<FormattedDate date={pubDate} />
+						{updatedDate && (<><span class="sep">·</span><span class="updated">更新于 <FormattedDate date={updatedDate} /></span></>)}
 					</div>
+					<h1 class="post-title">{title}</h1>
+					<p class="post-desc">{description}</p>
+				</div>
+				{heroImage && (
+					<div class="hero-image reveal">
+						<Image width={1280} height={640} src={heroImage} alt="" />
+					</div>
+				)}
+				<div class="prose reveal">
 					<slot />
 				</div>
+				<a class="back magnetic" href="/blog" data-magnetic="0.25">
+					<span class="arrow">←</span> 返回文章列表
+				</a>
 			</article>
 		</main>
 		<Footer />

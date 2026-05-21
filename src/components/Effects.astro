@@ -1,0 +1,65 @@
+---
+// Ambient background + custom cursor + scroll reveal + magnetic links + spotlight cards + tilt
+---
+
+<div class="ambient" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<script is:inline>
+function __fxInit(){
+	const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+	const coarse = matchMedia('(hover: none), (pointer: coarse)').matches;
+
+	// ----- Scroll reveal -----
+	const els = document.querySelectorAll('.reveal');
+	if ('IntersectionObserver' in window && !reduce) {
+		const io = new IntersectionObserver((entries) => {
+			entries.forEach((e) => {
+				if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+			});
+		}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+		els.forEach((el) => io.observe(el));
+	} else {
+		els.forEach((el) => el.classList.add('in'));
+	}
+
+	if (coarse || reduce) return;
+
+	// ----- Spotlight cards: track mouse for the radial glow -----
+	document.querySelectorAll('.spotlight').forEach((card) => {
+		card.addEventListener('mousemove', (e) => {
+			const r = card.getBoundingClientRect();
+			card.style.setProperty('--mx', `${e.clientX - r.left}px`);
+			card.style.setProperty('--my', `${e.clientY - r.top}px`);
+		});
+	});
+
+	// ----- Magnetic buttons -----
+	document.querySelectorAll('.magnetic').forEach((el) => {
+		const strength = parseFloat(el.dataset.magnetic || '0.35');
+		el.addEventListener('mousemove', (e) => {
+			const r = el.getBoundingClientRect();
+			const x = (e.clientX - r.left - r.width/2) * strength;
+			const y = (e.clientY - r.top - r.height/2) * strength;
+			el.style.transform = `translate(${x}px, ${y}px)`;
+		});
+		el.addEventListener('mouseleave', () => { el.style.transform = ''; });
+	});
+
+	// ----- Tilt cards -----
+	document.querySelectorAll('[data-tilt]').forEach((el) => {
+		const max = parseFloat(el.dataset.tilt || '6');
+		el.style.transformStyle = 'preserve-3d';
+		el.addEventListener('mousemove', (e) => {
+			const r = el.getBoundingClientRect();
+			const px = (e.clientX - r.left) / r.width - 0.5;
+			const py = (e.clientY - r.top) / r.height - 0.5;
+			el.style.transform = `perspective(900px) rotateX(${-py*max}deg) rotateY(${px*max}deg) translateY(-2px)`;
+		});
+		el.addEventListener('mouseleave', () => { el.style.transform = ''; });
+	});
+
+	addEventListener('mouseenter', () => { dot.style.opacity = '1'; ring.style.opacity = '1'; });
+}
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", __fxInit); else __fxInit();
+</script>

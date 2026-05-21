@@ -1,16 +1,47 @@
 ---
-title: 'Second post'
-description: 'Lorem ipsum dolor sit amet'
-pubDate: 'Jul 15 2022'
+title: '个人网站的内容结构怎么规划'
+description: '用少量稳定栏目支撑长期写作，避免站点一开始就变得难维护。'
+pubDate: '2026-05-18'
 heroImage: '../../assets/blog-placeholder-4.jpg'
 ---
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Vitae ultricies leo integer malesuada nunc vel risus commodo viverra. Adipiscing enim eu turpis egestas pretium. Euismod elementum nisi quis eleifend quam adipiscing. In hac habitasse platea dictumst vestibulum. Sagittis purus sit amet volutpat. Netus et malesuada fames ac turpis egestas. Eget magna fermentum iaculis eu non diam phasellus vestibulum lorem. Varius sit amet mattis vulputate enim. Habitasse platea dictumst quisque sagittis. Integer quis auctor elit sed vulputate mi. Dictumst quisque sagittis purus sit amet.
+个人网站不需要一开始就做得很复杂。真正影响长期维护的是内容结构：入口是否清楚、栏目是否稳定、每类内容有没有明确用途。
 
-Morbi tristique senectus et netus. Id semper risus in hendrerit gravida rutrum quisque non tellus. Habitasse platea dictumst quisque sagittis purus sit amet. Tellus molestie nunc non blandit massa. Cursus vitae congue mauris rhoncus. Accumsan tortor posuere ac ut. Fringilla urna porttitor rhoncus dolor. Elit ullamcorper dignissim cras tincidunt lobortis. In cursus turpis massa tincidunt dui ut ornare lectus. Integer feugiat scelerisque varius morbi enim nunc. Bibendum neque egestas congue quisque egestas diam. Cras ornare arcu dui vivamus arcu felis bibendum. Dignissim suspendisse in est ante in nibh mauris. Sed tempus urna et pharetra pharetra massa massa ultricies mi.
+## 首页负责回答三个问题
 
-Mollis nunc sed id semper risus in. Convallis a cras semper auctor neque. Diam sit amet nisl suscipit. Lacus viverra vitae congue eu consequat ac felis donec. Egestas integer eget aliquet nibh praesent tristique magna sit amet. Eget magna fermentum iaculis eu non diam. In vitae turpis massa sed elementum. Tristique et egestas quis ipsum suspendisse ultrices. Eget lorem dolor sed viverra ipsum. Vel turpis nunc eget lorem dolor sed viverra. Posuere ac ut consequat semper viverra nam. Laoreet suspendisse interdum consectetur libero id faucibus. Diam phasellus vestibulum lorem sed risus ultricies tristique. Rhoncus dolor purus non enim praesent elementum facilisis. Ultrices tincidunt arcu non sodales neque. Tempus egestas sed sed risus pretium quam vulputate. Viverra suspendisse potenti nullam ac tortor vitae purus faucibus ornare. Fringilla urna porttitor rhoncus dolor purus non. Amet dictum sit amet justo donec enim.
+首页不只是欢迎页，它应该快速说明：
 
-Mattis ullamcorper velit sed ullamcorper morbi tincidunt. Tortor posuere ac ut consequat semper viverra. Tellus mauris a diam maecenas sed enim ut sem viverra. Venenatis urna cursus eget nunc scelerisque viverra mauris in. Arcu ac tortor dignissim convallis aenean et tortor at. Curabitur gravida arcu ac tortor dignissim convallis aenean et tortor. Egestas tellus rutrum tellus pellentesque eu. Fusce ut placerat orci nulla pellentesque dignissim enim sit amet. Ut enim blandit volutpat maecenas volutpat blandit aliquam etiam. Id donec ultrices tincidunt arcu. Id cursus metus aliquam eleifend mi.
+- 这个站点是谁的。
+- 这里主要写什么。
+- 读者下一步可以去哪。
 
-Tempus quam pellentesque nec nam aliquam sem. Risus at ultrices mi tempus imperdiet. Id porta nibh venenatis cras sed felis eget velit. Ipsum a arcu cursus vitae. Facilisis magna etiam tempor orci eu lobortis elementum. Tincidunt dui ut ornare lectus sit. Quisque non tellus orci ac. Blandit libero volutpat sed cras. Nec tincidunt praesent semper feugiat nibh sed pulvinar proin gravida. Egestas integer eget aliquet nibh praesent tristique magna.
+如果首页只保留模板说明，访问者就很难理解站点的定位。把最新文章、主要栏目和简短说明放到首页，通常已经足够。
+
+## 文章页负责沉淀完整内容
+
+文章适合放结构完整、之后还会被检索的内容，例如：
+
+- 技术方案记录。
+- 踩坑复盘。
+- 学习路线总结。
+- 工具使用经验。
+
+文章不一定要很长，但最好有清晰的标题、摘要、日期和结论。这样即使过几个月回来查，也能迅速判断是否有用。
+
+## 笔记页负责承接半成品
+
+很多内容一开始只是一个想法，不适合直接变成长文。笔记页可以先接住这些半成品，等内容积累到一定程度，再整理成文章或项目复盘。
+
+这个流程比“想好了再写”更适合长期维护，因为它降低了开始记录的成本。
+
+## 项目页负责展示过程
+
+项目页不只展示最终结果，也可以记录：
+
+- 为什么要做。
+- 当前进展到哪里。
+- 用了什么技术。
+- 有哪些待解决问题。
+- 这次实践学到了什么。
+
+对个人网站来说，过程记录往往比单纯的成品链接更有价值。

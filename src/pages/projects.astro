@@ -1,0 +1,87 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Effects from '../components/Effects.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+
+const projects = [
+	{ name: '个人博客', status: '进行中', description: '把模板站点改造成中文优先的个人内容库，先完成文章、项目、笔记和关于页。', stack: 'Astro · MDX' },
+	{ name: '学习资料索引', status: '规划中', description: '整理常用文档、课程、工具和示例代码，减少重复查找资料的时间。', stack: '内容整理 · 自动化' },
+	{ name: '小工具合集', status: '待启动', description: '沉淀一些日常开发中反复使用的小脚本和网页工具，并记录设计取舍。', stack: 'TypeScript · Web APIs' },
+];
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<BaseHead title={`项目 — ${SITE_TITLE}`} description="Yunis 的项目记录和计划。" />
+	</head>
+	<body>
+		<Effects />
+		<Header />
+		<main>
+			<section class="hero">
+				<p class="eyebrow reveal">作品</p>
+				<h1 class="reveal" style="--reveal-delay: 100ms">在做与<em>计划中</em>。</h1>
+				<p class="lede reveal" style="--reveal-delay: 200ms">记录项目的目标、状态和技术栈。以后每个项目都可以扩展成独立详情页。</p>
+			</section>
+
+			<section class="project-list">
+				{projects.map((p, i) => (
+					<article class="project spotlight reveal" style={`--reveal-delay: ${i * 100}ms`}>
+						<div class="head">
+							<h2>{p.name}</h2>
+							<span class={`status status-${i === 0 ? 'active' : i === 1 ? 'plan' : 'idle'}`}>
+								<span class="dot"></span>{p.status}
+							</span>
+						</div>
+						<p class="desc">{p.description}</p>
+						<p class="stack">{p.stack}</p>
+					</article>
+				))}
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.hero { padding: 2rem 0 4rem; max-width: 720px; }
+	.hero h1 em { font-style: italic; color: rgb(var(--accent)); }
+	.lede { font-size: 1.05rem; color: rgb(var(--ink-soft)); }
+
+	.project-list { display: grid; gap: 1.25rem; }
+	.project { padding: 1.75rem 1.8rem; }
+	.head {
+		display: flex; justify-content: space-between; align-items: center;
+		gap: 1rem; margin-bottom: 0.6rem;
+	}
+	.head h2 { margin: 0; font-size: 1.55rem; }
+
+	.status {
+		display: inline-flex; align-items: center; gap: 0.45rem;
+		padding: 0.3rem 0.7rem;
+		font-size: 0.75rem; font-weight: 500; letter-spacing: 0.04em;
+		border-radius: 999px;
+		border: 1px solid rgb(var(--line));
+		background: rgba(var(--bg), 0.6);
+		color: rgb(var(--ink-soft));
+	}
+	.status .dot { width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--muted)); }
+	.status-active .dot { background: rgb(var(--accent)); box-shadow: 0 0 8px rgba(var(--accent), 0.6); animation: pulse 2.4s ease-in-out infinite; }
+	.status-plan .dot { background: #ddb44d; }
+
+	.desc { margin: 0 0 1rem; color: rgb(var(--ink-soft)); }
+	.stack {
+		margin: 0;
+		font-family: var(--font-mono);
+		font-size: 0.78rem; letter-spacing: 0.06em;
+		color: rgb(var(--muted));
+		text-transform: uppercase;
+	}
+
+	@media (max-width: 720px) {
+		.head { flex-direction: column; align-items: flex-start; gap: 0.4rem; }
+	}
+</style>
