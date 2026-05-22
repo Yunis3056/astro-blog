@@ -1,5 +1,5 @@
 ---
-// Ambient background + custom cursor + scroll reveal + magnetic links + spotlight cards + tilt
+// 背景 + 滚动渐显 + 磁吸 + spotlight + tilt
 ---
 
 <div class="ambient" aria-hidden="true"></div>
@@ -11,13 +11,13 @@ function __fxInit(){
 	const coarse = matchMedia('(hover: none), (pointer: coarse)').matches;
 
 	// ----- Scroll reveal -----
-	const els = document.querySelectorAll('.reveal');
+	const els = document.querySelectorAll('.reveal:not(.in)');
 	if ('IntersectionObserver' in window && !reduce) {
 		const io = new IntersectionObserver((entries) => {
 			entries.forEach((e) => {
 				if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
 			});
-		}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+		}, { threshold: 0.05, rootMargin: '0px 0px -10% 0px' });
 		els.forEach((el) => io.observe(el));
 	} else {
 		els.forEach((el) => el.classList.add('in'));
@@ -25,17 +25,21 @@ function __fxInit(){
 
 	if (coarse || reduce) return;
 
-	// ----- Spotlight cards: track mouse for the radial glow -----
+	// ----- Spotlight cards -----
 	document.querySelectorAll('.spotlight').forEach((card) => {
+		if (card.dataset.spotlightBound) return;
+		card.dataset.spotlightBound = '1';
 		card.addEventListener('mousemove', (e) => {
 			const r = card.getBoundingClientRect();
-			card.style.setProperty('--mx', `${e.clientX - r.left}px`);
-			card.style.setProperty('--my', `${e.clientY - r.top}px`);
+			card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+			card.style.setProperty('--my', (e.clientY - r.top) + 'px');
 		});
 	});
 
-	// ----- Magnetic buttons -----
+	// ----- Magnetic -----
 	document.querySelectorAll('.magnetic').forEach((el) => {
+		if (el.dataset.magneticBound) return;
+		el.dataset.magneticBound = '1';
 		const strength = parseFloat(el.dataset.magnetic || '0.35');
 		el.addEventListener('mousemove', (e) => {
 			const r = el.getBoundingClientRect();
@@ -46,8 +50,10 @@ function __fxInit(){
 		el.addEventListener('mouseleave', () => { el.style.transform = ''; });
 	});
 
-	// ----- Tilt cards -----
+	// ----- Tilt -----
 	document.querySelectorAll('[data-tilt]').forEach((el) => {
+		if (el.dataset.tiltBound) return;
+		el.dataset.tiltBound = '1';
 		const max = parseFloat(el.dataset.tilt || '6');
 		el.style.transformStyle = 'preserve-3d';
 		el.addEventListener('mousemove', (e) => {
@@ -58,8 +64,8 @@ function __fxInit(){
 		});
 		el.addEventListener('mouseleave', () => { el.style.transform = ''; });
 	});
-
-	addEventListener('mouseenter', () => { dot.style.opacity = '1'; ring.style.opacity = '1'; });
 }
-if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", __fxInit); else __fxInit();
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', __fxInit);
+else __fxInit();
+document.addEventListener('astro:page-load', __fxInit);
 </script>

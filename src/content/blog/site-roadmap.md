@@ -3,6 +3,7 @@ title: '这个站点接下来要补什么'
 description: '整理一个轻量但可持续维护的博客路线图，方便后续按优先级推进。'
 pubDate: '2026-05-20'
 heroImage: '../../assets/blog-placeholder-about.jpg'
+tags: ['博客', '规划']
 ---
 
 站点完成中文化和基础页面后，下一步不是马上堆功能，而是确认哪些能力能真正改善维护体验。

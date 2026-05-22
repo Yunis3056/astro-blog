@@ -1,0 +1,121 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../components/BaseHead.astro';
+import Effects from '../components/Effects.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+
+const posts = (await getCollection('blog'))
+	.filter((p) => !p.data.draft)
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+// 按年份分组
+const byYear = new Map<number, typeof posts>();
+for (const p of posts) {
+	const y = p.data.pubDate.getFullYear();
+	if (!byYear.has(y)) byYear.set(y, []);
+	byYear.get(y)!.push(p);
+}
+const years = Array.from(byYear.entries()).sort((a, b) => b[0] - a[0]);
+---
+<!doctype html>
+<html lang="zh-CN">
+	<head><BaseHead title={`归档 — ${SITE_TITLE}`} description="所有文章按时间线归档。" /></head>
+	<body>
+		<Effects />
+		<Header />
+		<main>
+			<section class="hero">
+				<p class="eyebrow reveal">时间线</p>
+				<h1 class="reveal" style="--reveal-delay: 100ms"><em>归档</em></h1>
+				<p class="lede reveal" style="--reveal-delay: 200ms">
+					{posts.length} 篇文章 / {years.length} 个年份。
+				</p>
+			</section>
+
+			<section class="timeline">
+				{years.map(([year, items], yi) => (
+					<div class="year-block reveal" style={`--reveal-delay: ${yi * 80}ms`}>
+						<div class="year-label">
+							<span class="year-num">{year}</span>
+							<span class="year-count">{items.length} 篇</span>
+						</div>
+						<ul class="year-list">
+							{items.map((p) => {
+								const m = p.data.pubDate.getMonth() + 1;
+								const d = p.data.pubDate.getDate();
+								return (
+									<li class="entry">
+										<a href={`/blog/${p.id}/`}>
+											<span class="dot" aria-hidden="true"></span>
+											<span class="md">{String(m).padStart(2, '0')}.{String(d).padStart(2, '0')}</span>
+											<span class="title">{p.data.title}</span>
+										</a>
+									</li>
+								);
+							})}
+						</ul>
+					</div>
+				))}
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.hero { padding: 2rem 0 3rem; max-width: 720px; }
+	.hero h1 em { font-style: italic; color: rgb(var(--accent)); }
+	.lede { color: rgb(var(--ink-soft)); }
+
+	.timeline { display: flex; flex-direction: column; gap: 3rem; }
+	.year-block { display: grid; grid-template-columns: 160px 1fr; gap: 2rem; align-items: start; }
+
+	.year-label {
+		position: sticky; top: 96px;
+		display: flex; flex-direction: column; gap: 0.3rem;
+	}
+	.year-num {
+		font-family: var(--font-display);
+		font-size: 2.5rem; line-height: 1; letter-spacing: -0.02em;
+		color: rgb(var(--ink));
+	}
+	.year-count { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; color: rgb(var(--muted)); }
+
+	.year-list { list-style: none; padding: 0; margin: 0; position: relative; }
+	.year-list::before {
+		content: ''; position: absolute;
+		left: 6px; top: 8px; bottom: 8px; width: 1px;
+		background: rgb(var(--line));
+	}
+
+	.entry a {
+		display: grid; grid-template-columns: 14px 70px 1fr;
+		align-items: center; gap: 1rem;
+		padding: 0.7rem 0;
+		color: rgb(var(--ink));
+		transition: padding-left 0.4s var(--ease);
+		position: relative;
+	}
+	.entry a:hover { padding-left: 0.6rem; }
+	.entry a:hover .title { color: rgb(var(--accent)); }
+	.entry a:hover .dot { background: rgb(var(--accent)); transform: scale(1.4); }
+
+	.dot {
+		width: 13px; height: 13px;
+		display: inline-block;
+		background: rgb(var(--bg)); border: 2px solid rgb(var(--line));
+		border-radius: 50%;
+		transition: background 0.3s var(--ease), border-color 0.3s var(--ease), transform 0.3s var(--ease);
+	}
+	.md { font-family: var(--font-mono); font-size: 0.78rem; color: rgb(var(--muted)); letter-spacing: 0.05em; }
+	.title { font-size: 0.95rem; line-height: 1.4; transition: color 0.3s var(--ease); }
+
+	@media (max-width: 720px) {
+		.year-block { grid-template-columns: 1fr; gap: 0.6rem; }
+		.year-label { position: static; flex-direction: row; align-items: baseline; gap: 0.8rem; }
+		.year-num { font-size: 1.6rem; }
+		.entry a { grid-template-columns: 14px 60px 1fr; gap: 0.6rem; }
+	}
+</style>

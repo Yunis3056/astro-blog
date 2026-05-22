@@ -3,6 +3,7 @@ title: 'Markdown 写作样式指南'
 description: '一篇用于测试标题、列表、表格、引用和代码块显示效果的中文 Markdown 示例。'
 pubDate: '2026-05-12'
 heroImage: '../../assets/blog-placeholder-1.jpg'
+tags: ['参考', 'Markdown']
 ---
 
 这篇文章用于检查博客文章的基础排版。后续调整全局样式时，可以回到这里确认 Markdown 元素是否显示正常。

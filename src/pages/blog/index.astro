@@ -8,7 +8,7 @@ import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
 import { SITE_TITLE } from '../../consts';
 
-const posts = (await getCollection('blog')).sort(
+const posts = (await getCollection('blog')).filter((p) => !p.data.draft).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
 ---
@@ -40,6 +40,9 @@ const posts = (await getCollection('blog')).sort(
 								<div class="row-main">
 									<h2 class="row-title">{post.data.title}</h2>
 									<p class="row-desc">{post.data.description}</p>
+									{post.data.tags && post.data.tags.length > 0 && (
+										<div class="row-tags">{post.data.tags.map((t) => <span class="row-chip">{t}</span>)}</div>
+									)}
 								</div>
 								{post.data.heroImage && (
 									<div class="row-thumb">
@@ -115,5 +118,16 @@ const posts = (await getCollection('blog')).sort(
 		.row-thumb { display: none; }
 		.row-arrow { display: none; }
 		.row-meta { flex-direction: row; gap: 1rem; }
+	}
+
+	.row-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.7rem; }
+	.row-chip {
+		display: inline-flex; align-items: center;
+		min-height: 22px; padding: 0.1rem 0.5rem;
+		font-size: 0.7rem; line-height: 1;
+		border-radius: 6px;
+		color: rgb(var(--ink-soft));
+		background: rgba(var(--bg-soft), 0.75);
+		border: 1px solid rgba(var(--line), 0.95);
 	}
 </style>
