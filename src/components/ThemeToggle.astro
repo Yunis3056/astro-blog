@@ -1,0 +1,39 @@
+---
+---
+<button id="themeToggle" class="theme-toggle" aria-label="切换主题">
+	<svg class="sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+	<svg class="moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
+
+<script is:inline>
+function __themeInit(){
+	var btn = document.getElementById('themeToggle');
+	if (!btn || btn.dataset.themeBound) return;
+	btn.dataset.themeBound = '1';
+	btn.addEventListener('click', function(){
+		var cur = document.documentElement.dataset.theme || 'light';
+		var next = cur === 'dark' ? 'light' : 'dark';
+		document.documentElement.dataset.theme = next;
+		try { localStorage.setItem('theme', next); } catch(e) {}
+	});
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', __themeInit); else __themeInit();
+document.addEventListener('astro:page-load', __themeInit);
+</script>
+
+<style>
+	.theme-toggle {
+		display: inline-flex; align-items: center; justify-content: center;
+		width: 34px; height: 34px;
+		color: rgb(var(--ink-soft));
+		background: rgba(var(--ink), 0.04);
+		border: 1px solid rgb(var(--line));
+		border-radius: 999px;
+		cursor: pointer;
+		transition: color .3s var(--ease), background .3s var(--ease), border-color .3s var(--ease), transform .4s var(--ease);
+	}
+	.theme-toggle:hover { color: rgb(var(--accent)); border-color: rgba(var(--ink), 0.3); transform: rotate(20deg); }
+	.theme-toggle .moon { display: none; }
+	:global([data-theme="dark"]) .theme-toggle .sun { display: none; }
+	:global([data-theme="dark"]) .theme-toggle .moon { display: block; }
+</style>

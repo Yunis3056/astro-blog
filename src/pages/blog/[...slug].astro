@@ -3,18 +3,27 @@ import { type CollectionEntry, getCollection, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
 
 export async function getStaticPaths() {
-	const posts = await getCollection('blog');
-	return posts.map((post) => ({
+	const posts = (await getCollection('blog'))
+		.filter((p) => !p.data.draft)
+		.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+	return posts.map((post, i) => ({
 		params: { slug: post.id },
-		props: post,
+		props: {
+			post,
+			prev: i + 1 < posts.length ? posts[i + 1] : null, // 更早的
+			next: i - 1 >= 0 ? posts[i - 1] : null,           // 更新的
+		},
 	}));
 }
-type Props = CollectionEntry<'blog'>;
 
-const post = Astro.props;
-const { Content } = await render(post);
+const { post, prev, next } = Astro.props as {
+	post: CollectionEntry<'blog'>;
+	prev: CollectionEntry<'blog'> | null;
+	next: CollectionEntry<'blog'> | null;
+};
+const { Content, headings } = await render(post);
 ---
 
-<BlogPost {...post.data}>
+<BlogPost {...post.data} headings={headings} body={post.body ?? ''} prev={prev} next={next}>
 	<Content />
 </BlogPost>

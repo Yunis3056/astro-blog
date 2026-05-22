@@ -1,0 +1,49 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Effects from '../../components/Effects.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import TagList from '../../components/TagList.astro';
+import { SITE_TITLE } from '../../consts';
+
+const posts = (await getCollection('blog')).filter((p) => !p.data.draft);
+const counts = new Map<string, number>();
+posts.forEach((p) => p.data.tags?.forEach((t) => counts.set(t, (counts.get(t) || 0) + 1)));
+const tags = Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+const tagNames = tags.map(([t]) => t);
+const tagCounts = Object.fromEntries(tags);
+---
+<!doctype html>
+<html lang="zh-CN">
+	<head><BaseHead title={`标签 — ${SITE_TITLE}`} description="按标签浏览所有文章。" /></head>
+	<body>
+		<Effects />
+		<Header />
+		<main>
+			<section class="hero">
+				<p class="eyebrow reveal">索引</p>
+				<h1 class="reveal" style="--reveal-delay: 100ms">标签<em>云</em></h1>
+				<p class="lede reveal" style="--reveal-delay: 200ms">
+					按主题翻找。共 <strong>{tags.length}</strong> 个标签 / <strong>{posts.length}</strong> 篇文章。
+				</p>
+			</section>
+
+			<section class="cloud reveal">
+				<TagList tags={tagNames} counts={tagCounts} size="lg" />
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.hero { padding: 2rem 0 3rem; max-width: 720px; }
+	.hero h1 em { font-style: italic; color: rgb(var(--accent)); }
+	.lede { font-size: 1.05rem; color: rgb(var(--ink-soft)); }
+	.lede strong { color: rgb(var(--ink)); font-weight: 600; }
+	.cloud {
+		margin-top: 1rem;
+		max-width: 980px;
+	}
+</style>

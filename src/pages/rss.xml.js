@@ -1,16 +1,40 @@
 import { getCollection } from 'astro:content';
 import rss from '@astrojs/rss';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import MarkdownIt from 'markdown-it';
+import sanitizeHtml from 'sanitize-html';
+
+const parser = new MarkdownIt({ html: true, linkify: true });
 
 export async function GET(context) {
-	const posts = await getCollection('blog');
+	const posts = (await getCollection('blog'))
+		.filter((p) => !p.data.draft)
+		.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
 	return rss({
 		title: SITE_TITLE,
 		description: SITE_DESCRIPTION,
 		site: context.site,
-		items: posts.map((post) => ({
-			...post.data,
-			link: `/blog/${post.id}/`,
-		})),
+		xmlns: { media: 'http://search.yahoo.com/mrss/' },
+		items: posts.map((post) => {
+			const cover = post.data.heroImage?.src
+				? new URL(post.data.heroImage.src, context.site).toString()
+				: null;
+			const html = sanitizeHtml(parser.render(post.body ?? ''), {
+				allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'figure', 'figcaption']),
+				allowedAttributes: { ...sanitizeHtml.defaults.allowedAttributes, img: ['src', 'alt', 'title'] },
+			});
+			return {
+				title: post.data.title,
+				description: post.data.description,
+				pubDate: post.data.pubDate,
+				link: `/blog/${post.id}/`,
+				categories: post.data.tags ?? [],
+				content: html,
+				customData: cover
+					? `<media:content url="${cover}" medium="image" />`
+					: undefined,
+			};
+		}),
 	});
 }

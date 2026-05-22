@@ -1,5 +1,6 @@
 // @ts-check
 
+import expressiveCode from 'astro-expressive-code';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import { defineConfig, fontProviders } from 'astro/config';
@@ -7,7 +8,21 @@ import { defineConfig, fontProviders } from 'astro/config';
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://yunis3056.github.io',
-	integrations: [mdx(), sitemap()],
+	integrations: [
+		expressiveCode({
+			themes: ['github-light', 'github-dark'],
+			themeCssSelector: (theme) => theme.name === 'github-dark' ? '[data-theme="dark"]' : '[data-theme="light"]',
+			useDarkModeMediaQuery: true,
+			styleOverrides: {
+				borderRadius: '12px',
+				codeFontFamily: 'var(--font-mono)',
+				frames: { shadowColor: 'transparent' },
+			},
+			defaultProps: { wrap: true },
+		}),
+		mdx(),
+		sitemap(),
+	],
 	fonts: [
 		{
 			provider: fontProviders.local(),
@@ -27,7 +42,7 @@ export default defineConfig({
 						weight: 700,
 						style: 'normal',
 						display: 'swap',
-					},
+										},
 				],
 			},
 		},

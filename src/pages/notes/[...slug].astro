@@ -1,0 +1,96 @@
+---
+import { type CollectionEntry, getCollection, render } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Effects from '../../components/Effects.astro';
+import Footer from '../../components/Footer.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import Header from '../../components/Header.astro';
+import { SITE_TITLE } from '../../consts';
+
+export async function getStaticPaths() {
+	const notes = (await getCollection('notes'))
+		.filter((note) => !note.data.draft)
+		.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+	return notes.map((note) => ({
+		params: { slug: note.id },
+		props: { note },
+	}));
+}
+
+const { note } = Astro.props as { note: CollectionEntry<'notes'> };
+const { Content } = await render(note);
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<BaseHead title={`${note.data.title} — 笔记 — ${SITE_TITLE}`} description={note.data.description} />
+	</head>
+	<body>
+		<Effects />
+		<Header />
+		<main class="detail-main">
+			<article>
+				<p class="eyebrow reveal"><a href="/notes/">← 返回笔记</a></p>
+				<header class="note-head reveal">
+					<div class="note-date"><FormattedDate date={note.data.pubDate} /></div>
+					<h1 data-pagefind-meta="title">{note.data.title}</h1>
+					<p class="lede">{note.data.description}</p>
+					{note.data.tags.length > 0 && (
+						<div class="tags">
+							{note.data.tags.map((tag) => <span>{tag}</span>)}
+						</div>
+					)}
+				</header>
+
+				<div class="content reveal" data-pagefind-body>
+					<Content />
+				</div>
+			</article>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.detail-main { max-width: var(--container-narrow); }
+	.note-head { margin-bottom: 3rem; }
+	.note-date {
+		margin-bottom: 1rem;
+		font-family: var(--font-mono);
+		font-size: 0.78rem; letter-spacing: 0.08em;
+		color: rgb(var(--muted));
+	}
+	.note-head h1 { margin-bottom: 1rem; }
+	.lede { font-size: 1.12rem; color: rgb(var(--ink-soft)); }
+	.tags {
+		display: flex; flex-wrap: wrap; gap: 0.4rem;
+		margin-top: 1.4rem;
+	}
+	.tags span {
+		display: inline-flex; align-items: center;
+		min-height: 24px; padding: 0.12rem 0.55rem;
+		font-size: 0.72rem;
+		border: 1px solid rgb(var(--line));
+		border-radius: 999px;
+		color: rgb(var(--ink-soft));
+		background: rgba(var(--bg-soft), 0.75);
+	}
+	.content {
+		font-size: 1.05rem;
+		border-top: 1px solid rgb(var(--line));
+		padding-top: 2rem;
+	}
+	.content :global(h2) { margin-top: 2.4rem; font-size: 1.55rem; }
+	.content :global(h2:first-child) { margin-top: 0; }
+	.content :global(p), .content :global(li) { color: rgb(var(--ink-soft)); }
+	.content :global(ul) { padding-left: 1.2rem; }
+	.content :global(a) {
+		color: rgb(var(--ink));
+		background-image: linear-gradient(rgb(var(--accent)), rgb(var(--accent)));
+		background-size: 100% 1px;
+		background-position: 0 100%;
+		background-repeat: no-repeat;
+	}
+	.content :global(a:hover) { color: rgb(var(--accent)); }
+</style>

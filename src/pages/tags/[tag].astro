@@ -1,0 +1,103 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Effects from '../../components/Effects.astro';
+import Footer from '../../components/Footer.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import Header from '../../components/Header.astro';
+import { SITE_TITLE } from '../../consts';
+
+export async function getStaticPaths() {
+	const posts = (await getCollection('blog')).filter((p) => !p.data.draft);
+	const tags = new Set<string>();
+	posts.forEach((p) => p.data.tags?.forEach((t) => tags.add(t)));
+	return Array.from(tags).map((tag) => ({
+		params: { tag },
+		props: {
+			tag,
+			posts: posts
+				.filter((p) => p.data.tags?.includes(tag))
+				.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()),
+		},
+	}));
+}
+
+const { tag, posts } = Astro.props;
+---
+<!doctype html>
+<html lang="zh-CN">
+	<head><BaseHead title={`#${tag} — ${SITE_TITLE}`} description={`所有标记为 ${tag} 的文章。`} /></head>
+	<body>
+		<Effects />
+		<Header />
+		<main>
+			<section class="hero">
+				<p class="eyebrow reveal"><a href="/tags/">← 返回标签云</a></p>
+				<h1 class="reveal" style="--reveal-delay: 100ms"><em>{tag}</em></h1>
+				<p class="lede reveal" style="--reveal-delay: 200ms">共 {posts.length} 篇相关文章。</p>
+			</section>
+			<section>
+				<ul class="post-feed">
+					{posts.map((post, i) => (
+						<li class="reveal" style={`--reveal-delay: ${i * 80}ms`}>
+							<a class="row" href={`/blog/${post.id}/`}>
+								<div class="row-meta">
+									<span class="num">{String(i + 1).padStart(2, '0')}</span>
+									<FormattedDate date={post.data.pubDate} />
+								</div>
+								<div class="row-main">
+									<h2 class="row-title">{post.data.title}</h2>
+									<p class="row-desc">{post.data.description}</p>
+									{post.data.tags && post.data.tags.length > 0 && (
+										<div class="row-tags">{post.data.tags.map((t) => <span class="row-chip">{t}</span>)}</div>
+									)}
+								</div>
+								<span class="row-arrow" aria-hidden="true">→</span>
+							</a>
+						</li>
+					))}
+				</ul>
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.hero { padding: 2rem 0 4rem; max-width: 720px; }
+	.hero h1 em { font-style: italic; color: rgb(var(--accent)); }
+	.lede { color: rgb(var(--ink-soft)); }
+
+	.post-feed { list-style: none; margin: 0; padding: 0; }
+	.post-feed li { border-top: 1px solid rgb(var(--line)); }
+	.post-feed li:last-child { border-bottom: 1px solid rgb(var(--line)); }
+	.row {
+		display: grid; grid-template-columns: 160px 1fr 32px;
+		gap: 2rem; align-items: center; padding: 1.6rem 0.5rem;
+		color: rgb(var(--ink)); transition: padding 0.5s var(--ease);
+	}
+	.row:hover { padding-left: 1.5rem; }
+	.row:hover .row-title { color: rgb(var(--accent)); }
+	.row:hover .row-arrow { transform: translateX(6px); color: rgb(var(--accent)); }
+	.row-meta { display: flex; flex-direction: column; gap: 0.3rem; color: rgb(var(--muted)); font-size: 0.85rem; }
+	.num { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.1em; }
+	.row-title { margin: 0 0 0.35rem; font-size: 1.4rem; transition: color 0.4s var(--ease); }
+	.row-desc { margin: 0 0 0.6rem; color: rgb(var(--ink-soft)); font-size: 0.95rem; }
+	.row-arrow { font-size: 1.2rem; color: rgb(var(--muted)); transition: transform 0.4s var(--ease), color 0.4s var(--ease); text-align: right; }
+	@media (max-width: 720px) {
+		.row { grid-template-columns: 1fr; gap: 0.8rem; padding: 1.2rem 0; }
+		.row-meta { flex-direction: row; gap: 1rem; }
+		.row-arrow { display: none; }
+	}
+
+	.row-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.6rem; }
+	.row-chip {
+		display: inline-flex; align-items: center;
+		min-height: 22px; padding: 0.1rem 0.5rem;
+		font-size: 0.7rem; line-height: 1;
+		border-radius: 6px;
+		color: rgb(var(--ink-soft));
+		background: rgba(var(--bg-soft), 0.75);
+		border: 1px solid rgba(var(--line), 0.95);
+	}
+</style>
