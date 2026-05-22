@@ -1,16 +1,15 @@
 ---
+import { getCollection } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Effects from '../components/Effects.astro';
 import Footer from '../components/Footer.astro';
+import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import { SITE_TITLE } from '../consts';
 
-const notes = [
-	'把新文章先写成短笔记，等结构稳定后再整理成长文。',
-	'项目页先记录状态和动机，后续再补截图、仓库链接和复盘。',
-	'站点下一步可以补标签页、搜索、代码高亮主题和部署说明。',
-	'中文内容要优先检查标题、摘要、日期和 RSS 是否一致。',
-];
+const notes = (await getCollection('notes'))
+	.filter((note) => !note.data.draft)
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 ---
 
 <!doctype html>
@@ -25,15 +24,22 @@ const notes = [
 			<section class="hero">
 				<p class="eyebrow reveal">碎片</p>
 				<h1 class="reveal" style="--reveal-delay: 100ms"><em>笔记</em>本</h1>
-				<p class="lede reveal" style="--reveal-delay: 200ms">还没整理成长文的短记录：想法、资料链接、待办事项、写作线索。</p>
+				<p class="lede reveal" style="--reveal-delay: 200ms">还没整理成长文的短记录：想法、资料链接、待办事项、写作线索。每条笔记都可以单独打开。</p>
 			</section>
 
 			<section>
 				<ul class="note-list">
 					{notes.map((note, i) => (
-						<li class="reveal spotlight" style={`--reveal-delay: ${i * 100}ms`}>
-							<span class="ix">#{String(i + 1).padStart(2, '0')}</span>
-							<p>{note}</p>
+						<li class="reveal" style={`--reveal-delay: ${i * 100}ms`}>
+							<a class="note spotlight" href={`/notes/${note.id}/`}>
+								<span class="ix">#{String(i + 1).padStart(2, '0')}</span>
+								<h2>{note.data.title}</h2>
+								<p>{note.data.description}</p>
+								<div class="meta">
+									<FormattedDate date={note.data.pubDate} />
+									<span>阅读笔记 <span class="arrow">→</span></span>
+								</div>
+							</a>
 						</li>
 					))}
 				</ul>
@@ -54,22 +60,41 @@ const notes = [
 		gap: 1.25rem;
 		list-style: none; padding: 0; margin: 0;
 	}
-	.note-list li {
+	.note {
 		position: relative;
 		padding: 1.5rem 1.6rem 1.6rem;
 		display: flex; flex-direction: column;
-		min-height: 160px;
+		min-height: 210px;
+		color: rgb(var(--ink));
 	}
 	.ix {
 		font-family: var(--font-mono);
 		font-size: 0.72rem; letter-spacing: 0.12em;
 		color: rgb(var(--accent));
 	}
-	.note-list p {
-		margin: 0.8rem 0 0;
-		font-family: var(--font-display);
-		font-size: 1.15rem; line-height: 1.55;
-		color: rgb(var(--ink));
+	.note h2 {
+		margin: 0.8rem 0 0.65rem;
+		font-size: 1.35rem;
+		transition: color 0.3s var(--ease);
 	}
-	@media (max-width: 720px) { .note-list { grid-template-columns: 1fr; } }
+	.note:hover h2 { color: rgb(var(--accent)); }
+	.note p {
+		margin: 0;
+		font-family: var(--font-display);
+		font-size: 1.08rem; line-height: 1.55;
+		color: rgb(var(--ink));
+		flex: 1;
+	}
+	.meta {
+		display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+		margin-top: 1.2rem;
+		font-size: 0.78rem; color: rgb(var(--muted));
+	}
+	.meta .arrow { display: inline-block; transition: transform 0.3s var(--ease); }
+	.note:hover .meta .arrow { transform: translateX(6px); }
+
+	@media (max-width: 720px) {
+		.note-list { grid-template-columns: 1fr; }
+		.meta { align-items: flex-start; flex-direction: column; gap: 0.4rem; }
+	}
 </style>

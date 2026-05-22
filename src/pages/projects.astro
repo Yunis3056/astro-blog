@@ -1,15 +1,21 @@
 ---
+import { getCollection } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Effects from '../components/Effects.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import { SITE_TITLE } from '../consts';
 
-const projects = [
-	{ name: '个人博客', status: '进行中', description: '把模板站点改造成中文优先的个人内容库，先完成文章、项目、笔记和关于页。', stack: 'Astro · MDX' },
-	{ name: '学习资料索引', status: '规划中', description: '整理常用文档、课程、工具和示例代码，减少重复查找资料的时间。', stack: '内容整理 · 自动化' },
-	{ name: '小工具合集', status: '待启动', description: '沉淀一些日常开发中反复使用的小脚本和网页工具，并记录设计取舍。', stack: 'TypeScript · Web APIs' },
-];
+const statusLabels = {
+	active: '进行中',
+	planned: '规划中',
+	idle: '待启动',
+	done: '已完成',
+} as const;
+
+const projects = (await getCollection('projects'))
+	.filter((p) => !p.data.draft)
+	.sort((a, b) => a.data.order - b.data.order || a.data.title.localeCompare(b.data.title, 'zh-CN'));
 ---
 
 <!doctype html>
@@ -24,21 +30,22 @@ const projects = [
 			<section class="hero">
 				<p class="eyebrow reveal">作品</p>
 				<h1 class="reveal" style="--reveal-delay: 100ms">在做与<em>计划中</em>。</h1>
-				<p class="lede reveal" style="--reveal-delay: 200ms">记录项目的目标、状态和技术栈。以后每个项目都可以扩展成独立详情页。</p>
+				<p class="lede reveal" style="--reveal-delay: 200ms">记录项目的目标、状态和技术栈。每个项目都可以点进去看进度、动机和后续计划。</p>
 			</section>
 
 			<section class="project-list">
-				{projects.map((p, i) => (
-					<article class="project spotlight reveal" style={`--reveal-delay: ${i * 100}ms`}>
+				{projects.map((project, i) => (
+					<a class="project spotlight reveal" href={`/projects/${project.id}/`} style={`--reveal-delay: ${i * 100}ms`}>
 						<div class="head">
-							<h2>{p.name}</h2>
-							<span class={`status status-${i === 0 ? 'active' : i === 1 ? 'plan' : 'idle'}`}>
-								<span class="dot"></span>{p.status}
+							<h2>{project.data.title}</h2>
+							<span class={`status status-${project.data.status}`}>
+								<span class="dot"></span>{statusLabels[project.data.status]}
 							</span>
 						</div>
-						<p class="desc">{p.description}</p>
-						<p class="stack">{p.stack}</p>
-					</article>
+						<p class="desc">{project.data.description}</p>
+						<p class="stack">{project.data.stack.join(' · ')}</p>
+						<span class="open">查看项目 <span class="arrow">→</span></span>
+					</a>
 				))}
 			</section>
 		</main>
@@ -52,12 +59,17 @@ const projects = [
 	.lede { font-size: 1.05rem; color: rgb(var(--ink-soft)); }
 
 	.project-list { display: grid; gap: 1.25rem; }
-	.project { padding: 1.75rem 1.8rem; }
+	.project {
+		display: block;
+		padding: 1.75rem 1.8rem;
+		color: rgb(var(--ink));
+	}
 	.head {
 		display: flex; justify-content: space-between; align-items: center;
 		gap: 1rem; margin-bottom: 0.6rem;
 	}
-	.head h2 { margin: 0; font-size: 1.55rem; }
+	.head h2 { margin: 0; font-size: 1.55rem; transition: color 0.3s var(--ease); }
+	.project:hover h2 { color: rgb(var(--accent)); }
 
 	.status {
 		display: inline-flex; align-items: center; gap: 0.45rem;
@@ -67,10 +79,12 @@ const projects = [
 		border: 1px solid rgb(var(--line));
 		background: rgba(var(--bg), 0.6);
 		color: rgb(var(--ink-soft));
+		white-space: nowrap;
 	}
 	.status .dot { width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--muted)); }
 	.status-active .dot { background: rgb(var(--accent)); box-shadow: 0 0 8px rgba(var(--accent), 0.6); animation: pulse 2.4s ease-in-out infinite; }
-	.status-plan .dot { background: #ddb44d; }
+	.status-planned .dot { background: #ddb44d; }
+	.status-done .dot { background: #4f9f6f; }
 
 	.desc { margin: 0 0 1rem; color: rgb(var(--ink-soft)); }
 	.stack {
@@ -80,6 +94,14 @@ const projects = [
 		color: rgb(var(--muted));
 		text-transform: uppercase;
 	}
+	.open {
+		display: inline-flex; align-items: center; gap: 0.35rem;
+		margin-top: 1.2rem;
+		font-size: 0.88rem; font-weight: 600;
+		color: rgb(var(--ink));
+	}
+	.open .arrow { display: inline-block; transition: transform 0.3s var(--ease); }
+	.project:hover .open .arrow { transform: translateX(6px); }
 
 	@media (max-width: 720px) {
 		.head { flex-direction: column; align-items: flex-start; gap: 0.4rem; }

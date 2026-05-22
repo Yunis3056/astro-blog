@@ -1,0 +1,129 @@
+---
+import { type CollectionEntry, getCollection, render } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Effects from '../../components/Effects.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import { SITE_TITLE } from '../../consts';
+
+const statusLabels = {
+	active: '进行中',
+	planned: '规划中',
+	idle: '待启动',
+	done: '已完成',
+} as const;
+
+export async function getStaticPaths() {
+	const projects = (await getCollection('projects'))
+		.filter((project) => !project.data.draft)
+		.sort((a, b) => a.data.order - b.data.order || a.data.title.localeCompare(b.data.title, 'zh-CN'));
+	return projects.map((project) => ({
+		params: { slug: project.id },
+		props: { project },
+	}));
+}
+
+const { project } = Astro.props as { project: CollectionEntry<'projects'> };
+const { Content } = await render(project);
+const repoUrl = project.data.repoUrl || '';
+const demoUrl = project.data.demoUrl || '';
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<BaseHead title={`${project.data.title} — 项目 — ${SITE_TITLE}`} description={project.data.description} />
+	</head>
+	<body>
+		<Effects />
+		<Header />
+		<main class="detail-main">
+			<article>
+				<p class="eyebrow reveal"><a href="/projects/">← 返回项目</a></p>
+				<header class="project-head reveal">
+					<div class="title-row">
+						<h1 data-pagefind-meta="title">{project.data.title}</h1>
+						<span class={`status status-${project.data.status}`}>
+							<span class="dot"></span>{statusLabels[project.data.status]}
+						</span>
+					</div>
+					<p class="lede">{project.data.description}</p>
+					<div class="meta-row">
+						{project.data.stack.length > 0 && <span>{project.data.stack.join(' · ')}</span>}
+						{repoUrl && <a href={repoUrl} target="_blank" rel="noreferrer">仓库</a>}
+						{demoUrl && <a href={demoUrl} target="_blank" rel="noreferrer">演示</a>}
+					</div>
+				</header>
+
+				<div class="content reveal" data-pagefind-body>
+					<Content />
+				</div>
+			</article>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.detail-main { max-width: var(--container-narrow); }
+	.project-head { margin-bottom: 3rem; }
+	.title-row {
+		display: flex; align-items: flex-start; justify-content: space-between;
+		gap: 1.5rem;
+	}
+	.title-row h1 { margin-bottom: 1rem; }
+	.lede { font-size: 1.12rem; color: rgb(var(--ink-soft)); }
+	.meta-row {
+		display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;
+		margin-top: 1.5rem;
+		font-family: var(--font-mono);
+		font-size: 0.78rem; letter-spacing: 0.06em;
+		color: rgb(var(--muted));
+		text-transform: uppercase;
+	}
+	.meta-row a {
+		padding: 0.18rem 0.55rem;
+		border: 1px solid rgb(var(--line));
+		border-radius: 999px;
+		color: rgb(var(--ink-soft));
+		text-transform: none;
+		letter-spacing: 0;
+	}
+	.meta-row a:hover { color: rgb(var(--accent)); border-color: rgba(var(--accent), 0.5); }
+	.status {
+		display: inline-flex; align-items: center; gap: 0.45rem;
+		padding: 0.3rem 0.7rem;
+		font-size: 0.75rem; font-weight: 500; letter-spacing: 0.04em;
+		border-radius: 999px;
+		border: 1px solid rgb(var(--line));
+		background: rgba(var(--bg-soft), 0.8);
+		color: rgb(var(--ink-soft));
+		white-space: nowrap;
+	}
+	.status .dot { width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--muted)); }
+	.status-active .dot { background: rgb(var(--accent)); box-shadow: 0 0 8px rgba(var(--accent), 0.6); animation: pulse 2.4s ease-in-out infinite; }
+	.status-planned .dot { background: #ddb44d; }
+	.status-done .dot { background: #4f9f6f; }
+
+	.content {
+		font-size: 1.05rem;
+		border-top: 1px solid rgb(var(--line));
+		padding-top: 2rem;
+	}
+	.content :global(h2) { margin-top: 2.4rem; font-size: 1.55rem; }
+	.content :global(h2:first-child) { margin-top: 0; }
+	.content :global(p), .content :global(li) { color: rgb(var(--ink-soft)); }
+	.content :global(ul) { padding-left: 1.2rem; }
+	.content :global(a) {
+		color: rgb(var(--ink));
+		background-image: linear-gradient(rgb(var(--accent)), rgb(var(--accent)));
+		background-size: 100% 1px;
+		background-position: 0 100%;
+		background-repeat: no-repeat;
+	}
+	.content :global(a:hover) { color: rgb(var(--accent)); }
+
+	@media (max-width: 720px) {
+		.title-row { flex-direction: column; gap: 0.4rem; }
+	}
+</style>
