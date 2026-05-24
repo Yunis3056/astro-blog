@@ -6,6 +6,24 @@ import sanitizeHtml from 'sanitize-html';
 
 const parser = new MarkdownIt({ html: true, linkify: true });
 
+function isMdxBody(body = '', filePath = '') {
+	return filePath.endsWith('.mdx')
+		|| /^\s*import\s.+from\s+['"].+['"];?/m.test(body)
+		|| /<[A-Z][A-Za-z0-9]*(\s|>|\/>)/.test(body);
+}
+
+function renderRssContent(post) {
+	const body = post.body ?? '';
+	const rawHtml = isMdxBody(body, post.filePath ?? '')
+		? `<p>${post.data.description}</p>`
+		: parser.render(body);
+
+	return sanitizeHtml(rawHtml, {
+		allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'figure', 'figcaption']),
+		allowedAttributes: { ...sanitizeHtml.defaults.allowedAttributes, img: ['src', 'alt', 'title'] },
+	});
+}
+
 export async function GET(context) {
 	const posts = (await getCollection('blog'))
 		.filter((p) => !p.data.draft)
@@ -20,10 +38,7 @@ export async function GET(context) {
 			const cover = post.data.heroImage?.src
 				? new URL(post.data.heroImage.src, context.site).toString()
 				: null;
-			const html = sanitizeHtml(parser.render(post.body ?? ''), {
-				allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'figure', 'figcaption']),
-				allowedAttributes: { ...sanitizeHtml.defaults.allowedAttributes, img: ['src', 'alt', 'title'] },
-			});
+			const html = renderRssContent(post);
 			return {
 				title: post.data.title,
 				description: post.data.description,

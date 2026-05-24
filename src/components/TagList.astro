@@ -1,19 +1,17 @@
 ---
-interface Props { tags: string[]; counts?: Record<string, number>; size?: 'sm' | 'md' | 'lg'; }
-const { tags, counts = {}, size = 'md' } = Astro.props;
+interface Props { tags: string[]; size?: 'sm' | 'md' | 'lg'; }
+const { tags, size = 'md' } = Astro.props;
 ---
 <ul class={`tag-list ${size}`}>
 	{tags.map((t) => {
-		const count = counts[t];
 		return (
 			<li>
 				<a
 					href={`/tags/${encodeURIComponent(t)}/`}
 					class="tag"
-					aria-label={count ? `查看 ${t} 标签下的 ${count} 篇文章` : `查看 ${t} 标签`}
+					aria-label={`查看 ${t} 标签`}
 				>
 					<span class="name">{t}</span>
-					{count && <span class="count">{count}</span>}
 				</a>
 			</li>
 		);
@@ -49,20 +47,11 @@ const { tags, counts = {}, size = 'md' } = Astro.props;
 			transform .25s var(--ease);
 	}
 	.name { white-space: nowrap; }
-	.count {
-		font-family: var(--font-mono);
-		font-size: 0.85em;
-		font-weight: 700;
-		color: rgb(var(--ink-soft));
-	}
 	.tag:hover {
 		color: rgb(var(--bg));
 		background: rgb(var(--accent));
 		border-color: rgb(var(--accent));
 		transform: translateY(-1px);
-	}
-	.tag:hover .count {
-		color: rgb(var(--bg));
 	}
 	:global([data-theme="dark"]) .tag {
 		background: rgba(var(--accent), 0.13);
@@ -74,7 +63,6 @@ const { tags, counts = {}, size = 'md' } = Astro.props;
 		padding: 0.12rem 0.52rem;
 		font-size: 0.7rem;
 	}
-	.tag-list.sm .count { display: none; }
 	.tag-list.lg {
 		gap: 0.78rem 0.9rem;
 	}

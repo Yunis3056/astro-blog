@@ -26,7 +26,7 @@ const { tag, posts } = Astro.props;
 ---
 <!doctype html>
 <html lang="zh-CN">
-	<head><BaseHead title={`#${tag} — ${SITE_TITLE}`} description={`所有标记为 ${tag} 的文章。`} /></head>
+	<head><BaseHead title={`${tag} — ${SITE_TITLE}`} description={`所有标记为 ${tag} 的文章。`} /></head>
 	<body>
 		<Effects />
 		<Header />
@@ -34,7 +34,7 @@ const { tag, posts } = Astro.props;
 			<section class="hero">
 				<p class="eyebrow reveal"><a href="/tags/">← 返回标签云</a></p>
 				<h1 class="reveal" style="--reveal-delay: 100ms"><em>{tag}</em></h1>
-				<p class="lede reveal" style="--reveal-delay: 200ms">共 {posts.length} 篇相关文章。</p>
+				<p class="lede reveal" style="--reveal-delay: 200ms">按时间倒序整理的相关文章。</p>
 			</section>
 			<section>
 				<ul class="post-feed">

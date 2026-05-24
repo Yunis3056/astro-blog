@@ -7,6 +7,8 @@
 ```sh
 npm.cmd run check
 npm.cmd run build
+npm.cmd run verify:dist
+npm.cmd run verify:links
 ```
 
 要求：
@@ -14,6 +16,10 @@ npm.cmd run build
 - Astro / TypeScript 无诊断错误。
 - Astro 构建退出码为 0。
 - Pagefind `postbuild` 成功执行。
+- 构建产物检查确认 RSS、Sitemap、Pagefind、OG 和公开内容页面存在。
+- 内部链接检查确认站内链接、图片路径和锚点目标可解析。
+
+GitHub Actions 会在 `dev` 和 `main` 的 push / pull request 上运行同一套验证命令。该工作流只做验证，不负责自动部署。
 
 ## 内容完整性
 
@@ -35,12 +41,22 @@ npm.cmd run build
 
 ## 构建产物验证
 
-检查 `dist/`：
+`npm.cmd run verify:dist` 会检查 `dist/`：
 
 - `dist/pagefind/` 存在。
 - 公开文章有对应 HTML。
 - 公开文章有对应 OG 图片。
 - 草稿没有对应公开 HTML、RSS 条目、标签入口和 OG 图片。
+- Pagefind 索引数量和公开内容详情页数量一致。
+
+## 链接验证
+
+`npm.cmd run verify:links` 会检查构建后的 HTML：
+
+- 站内页面链接可以解析到 `dist/` 中的 HTML 或静态资源。
+- 相对链接和站点绝对链接都会按内部链接处理。
+- URL hash 会验证目标页面是否存在对应 `id` 或 `name`。
+- 外部链接第一版不阻塞发布，暂时只跳过并统计数量。
 
 ## 响应式验证
 

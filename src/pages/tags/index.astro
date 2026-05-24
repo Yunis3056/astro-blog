@@ -12,7 +12,6 @@ const counts = new Map<string, number>();
 posts.forEach((p) => p.data.tags?.forEach((t) => counts.set(t, (counts.get(t) || 0) + 1)));
 const tags = Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 const tagNames = tags.map(([t]) => t);
-const tagCounts = Object.fromEntries(tags);
 ---
 <!doctype html>
 <html lang="zh-CN">
@@ -25,12 +24,12 @@ const tagCounts = Object.fromEntries(tags);
 				<p class="eyebrow reveal">索引</p>
 				<h1 class="reveal" style="--reveal-delay: 100ms">标签<em>云</em></h1>
 				<p class="lede reveal" style="--reveal-delay: 200ms">
-					按主题翻找。共 <strong>{tags.length}</strong> 个标签 / <strong>{posts.length}</strong> 篇文章。
+					按主题翻找文章。
 				</p>
 			</section>
 
 			<section class="cloud reveal">
-				<TagList tags={tagNames} counts={tagCounts} size="lg" />
+				<TagList tags={tagNames} size="lg" />
 			</section>
 		</main>
 		<Footer />
@@ -41,7 +40,6 @@ const tagCounts = Object.fromEntries(tags);
 	.hero { padding: 2rem 0 3rem; max-width: 720px; }
 	.hero h1 em { font-style: italic; color: rgb(var(--accent)); }
 	.lede { font-size: 1.05rem; color: rgb(var(--ink-soft)); }
-	.lede strong { color: rgb(var(--ink)); font-weight: 600; }
 	.cloud {
 		margin-top: 1rem;
 		max-width: 980px;

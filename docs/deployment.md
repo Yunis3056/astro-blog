@@ -15,6 +15,8 @@ Windows PowerShell 下建议使用 `npm.cmd`，避免执行策略影响 `npm.ps1
 npm install
 npm.cmd run check
 npm.cmd run build
+npm.cmd run verify:dist
+npm.cmd run verify:links
 ```
 
 `npm.cmd run build` 会执行：
@@ -23,6 +25,18 @@ npm.cmd run build
 2. `postbuild` 中的 Pagefind 索引生成。
 
 最终产物位于 `dist/`。
+
+`verify:dist` 和 `verify:links` 必须在构建后运行，因为它们检查的是 `dist/` 中的实际产物。
+
+## CI 验证
+
+仓库包含 GitHub Actions 验证工作流：
+
+- 触发范围：`dev` 和 `main` 的 push / pull request。
+- Node.js：`22.12.0`。
+- 执行步骤：`npm ci`、`npm run check`、`npm run build`、`npm run verify:dist`、`npm run verify:links`。
+- 链接策略：只阻塞内部链接、图片路径和锚点错误；外部链接第一版不阻塞发布。
+- 自动化范围：只做验证，不负责自动部署。
 
 ## 本地预览
 
