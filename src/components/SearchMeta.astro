@@ -1,0 +1,37 @@
+---
+interface Props {
+	type: string;
+	date?: Date | string;
+	topics?: string[];
+	tags?: string[];
+	series?: string;
+}
+
+const { type, date, topics = [], tags = [], series } = Astro.props;
+const sortDate = date ? new Date(date).toISOString().slice(0, 10) : '1970-01-01';
+---
+
+<div class="sr-only" data-pagefind-ignore>
+	<span data-pagefind-filter="type">{type}</span>
+	<span data-pagefind-meta="type">{type}</span>
+	<time data-pagefind-sort="date" datetime={sortDate}>{sortDate}</time>
+	{date && <span data-pagefind-meta="date">{sortDate}</span>}
+	{topics.map((topic) => (
+		<>
+			<span data-pagefind-filter="topic">{topic}</span>
+			<span data-pagefind-meta="topic">{topic}</span>
+		</>
+	))}
+	{tags.map((tag) => (
+		<>
+			<span data-pagefind-filter="tag">{tag}</span>
+			<span data-pagefind-meta="tag">{tag}</span>
+		</>
+	))}
+	{series && (
+		<>
+			<span data-pagefind-filter="series">{series}</span>
+			<span data-pagefind-meta="series">{series}</span>
+		</>
+	)}
+</div>

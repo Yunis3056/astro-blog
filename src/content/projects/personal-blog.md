@@ -6,6 +6,8 @@ stack: ["Astro", "MDX", "Pagefind"]
 order: 1
 repoUrl: "https://github.com/Yunis3056/astro-blog"
 demoUrl: ""
+topics: ["site-engineering", "project-practice"]
+featured: true
 draft: false
 ---
 
@@ -21,4 +23,4 @@ draft: false
 
 ## 下一步
 
-继续完善 v3.0 内容模型，让写作、发布、搜索和维护都有清晰入口。
+继续完善 v4.0 知识系统，让专题、系列、搜索和讨论都有清晰入口。

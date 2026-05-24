@@ -3,6 +3,9 @@ title: "站点下一步升级线索"
 description: "记录标签页、搜索、代码高亮主题和部署说明之外，还需要持续补齐的站点能力。"
 pubDate: 2026-05-22
 tags: ["Astro", "规划"]
+topics: ["site-engineering"]
+series: { slug: "astro-blog-upgrade", order: 4 }
+featured: true
 draft: false
 ---
 

@@ -2,7 +2,19 @@
 
 本项目遵循“人能读懂优先”的变更记录方式。还没有正式语义化发布时，版本号按路线图阶段记录。
 
-## Unreleased · v3.0
+## Unreleased · v4.0
+
+### Added
+
+- 知识系统：新增 `topics` 和 `series` 内容集合，以及 `/topics/`、`/series/` 路由。
+- 内容模型：文章、笔记、项目支持 `topics`、`featured`；文章和笔记支持 `series`、`canonicalURL`。
+- 首页升级：以精选内容、专题矩阵、系列路线和近期写作组织首屏后的阅读路径。
+- 文章页升级：展示所属专题、系列进度、相关文章和 Giscus 评论入口。
+- 搜索升级：Pagefind 增加内容类型、专题、标签过滤和日期排序。
+- 增长闭环：可选接入 Giscus 和 Plausible，未配置时保持静态降级。
+- 内容验证：新增 `npm.cmd run verify:content`，校验专题 / 系列引用和系列顺序冲突。
+
+## v3.0 · 2026-05-24
 
 ### Planned
 

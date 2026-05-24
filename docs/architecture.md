@@ -1,6 +1,6 @@
 # 架构说明
 
-本文档描述当前项目结构和关键运行链路。目标是让后续 v3.0 改动有稳定参照。
+本文档描述当前项目结构和关键运行链路。目标是让后续改动有稳定参照。
 
 ## 技术栈
 
@@ -11,6 +11,7 @@
 - Expressive Code：代码块展示增强。
 - Pagefind：构建后生成静态搜索索引。
 - `@vercel/og`：构建期生成文章 OG 图片。
+- Giscus / Plausible：可选外部评论和统计能力。
 
 ## 目录职责
 
@@ -20,6 +21,11 @@ scripts/                本地写作和维护脚本
 src/assets/             Astro 管理的图片、字体等资源
 src/components/         Header、Search、ThemeToggle、TagList 等组件
 src/content/blog/       文章内容集合
+src/content/notes/      笔记内容集合
+src/content/projects/   项目内容集合
+src/content/topics/     专题内容集合
+src/content/series/     系列内容集合
+src/lib/                共享内容查询和排序工具
 src/layouts/            BlogPost 等布局
 src/pages/              Astro 路由页面
 src/styles/global.css   全局变量、主题和基础排版
@@ -33,6 +39,10 @@ docs/                   项目维护文档
 - `/blog/[slug]/`：文章详情。
 - `/tags/`：标签索引。
 - `/tags/[tag]/`：标签详情。
+- `/topics/`：专题索引。
+- `/topics/[slug]/`：专题详情。
+- `/series/`：系列索引。
+- `/series/[slug]/`：系列详情。
 - `/archive/`：归档页。
 - `/projects/`：项目页。
 - `/notes/`：笔记页。
@@ -42,12 +52,14 @@ docs/                   项目维护文档
 
 ## 内容流
 
-1. 文章存放在 `src/content/blog/`。
+1. 文章、笔记、项目、专题和系列分别存放在 `src/content/` 下对应集合。
 2. `src/content.config.ts` 定义 frontmatter schema。
-3. 页面通过 Astro content collections 读取文章。
-4. 页面列表、标签、归档、RSS、OG 统一过滤 `draft: true`。
-5. `npm.cmd run build` 生成静态 HTML 和资源。
-6. `postbuild` 执行 Pagefind，生成搜索索引。
+3. 页面通过 Astro content collections 读取内容。
+4. `src/lib/content.ts` 统一公开内容过滤、排序、专题和系列聚合。
+5. 页面列表、标签、专题、系列、归档、RSS、OG 统一过滤 `draft: true`。
+6. `npm.cmd run verify:content` 检查专题 / 系列引用和系列顺序。
+7. `npm.cmd run build` 生成静态 HTML 和资源。
+8. `postbuild` 执行 Pagefind，生成搜索索引、过滤器和日期排序字段。
 
 ## 客户端脚本
 
@@ -58,6 +70,7 @@ docs/                   项目维护文档
 - `Search.astro`：搜索弹窗、快捷键、结果导航。
 - `ThemeToggle.astro`：主题按钮和持久化。
 - `Effects.astro`：页面动效。
+- `Comments.astro`：按需注入 Giscus。
 - `BlogPost.astro` 内联脚本：阅读进度和目录高亮。
 
 约束：

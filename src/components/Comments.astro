@@ -1,0 +1,95 @@
+---
+const repo = import.meta.env.PUBLIC_GISCUS_REPO;
+const repoId = import.meta.env.PUBLIC_GISCUS_REPO_ID;
+const category = import.meta.env.PUBLIC_GISCUS_CATEGORY;
+const categoryId = import.meta.env.PUBLIC_GISCUS_CATEGORY_ID;
+const enabled = Boolean(repo && repoId && category && categoryId);
+---
+
+<section class="comments" aria-labelledby="comments-title">
+	<div class="comments-head">
+		<p class="eyebrow small">讨论</p>
+		<h2 id="comments-title">继续补充这篇内容。</h2>
+	</div>
+	{enabled ? (
+		<div
+			id="giscusThread"
+			data-repo={repo}
+			data-repo-id={repoId}
+			data-category={category}
+			data-category-id={categoryId}
+		></div>
+	) : (
+		<a
+			class="discussion-link"
+			href="https://github.com/Yunis3056/astro-blog/discussions"
+			target="_blank"
+			rel="noreferrer"
+			data-plausible-event="Comment Click"
+			data-plausible-props-target="github-discussions"
+		>
+			打开 GitHub Discussions <span aria-hidden="true">→</span>
+		</a>
+	)}
+</section>
+
+{enabled && (
+	<script is:inline>
+		function __giscusInit(){
+			const container = document.getElementById('giscusThread');
+			if (!container || container.dataset.loaded) return;
+			container.dataset.loaded = '1';
+			const script = document.createElement('script');
+			script.src = 'https://giscus.app/client.js';
+			script.async = true;
+			script.crossOrigin = 'anonymous';
+			script.setAttribute('data-repo', container.dataset.repo);
+			script.setAttribute('data-repo-id', container.dataset.repoId);
+			script.setAttribute('data-category', container.dataset.category);
+			script.setAttribute('data-category-id', container.dataset.categoryId);
+			script.setAttribute('data-mapping', 'pathname');
+			script.setAttribute('data-strict', '0');
+			script.setAttribute('data-reactions-enabled', '1');
+			script.setAttribute('data-emit-metadata', '0');
+			script.setAttribute('data-input-position', 'bottom');
+			script.setAttribute('data-theme', 'preferred_color_scheme');
+			script.setAttribute('data-lang', 'zh-CN');
+			script.addEventListener('load', () => window.plausible?.('Comment Widget Loaded'));
+			container.appendChild(script);
+		}
+		if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', __giscusInit);
+		else __giscusInit();
+		document.addEventListener('astro:page-load', __giscusInit);
+	</script>
+)}
+
+<style>
+	.comments {
+		margin-top: 4rem;
+		padding-top: 2.5rem;
+		border-top: 1px solid rgb(var(--line));
+	}
+	.comments-head h2 {
+		margin: 0 0 1.2rem;
+		font-size: 1.5rem;
+		letter-spacing: 0;
+	}
+	.eyebrow.small {
+		margin-bottom: 0.7rem;
+		font-size: 0.68rem;
+	}
+	.discussion-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.75rem 1rem;
+		border: 1px solid rgb(var(--line));
+		border-radius: 999px;
+		color: rgb(var(--ink));
+		background: rgba(var(--bg-soft), 0.7);
+	}
+	.discussion-link:hover {
+		border-color: rgba(var(--accent), 0.55);
+		color: rgb(var(--accent));
+	}
+</style>

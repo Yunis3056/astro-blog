@@ -1,6 +1,6 @@
 # 内容模型
 
-本文档定义当前内容字段和 v3.0 计划扩展。代码实现以 `src/content.config.ts` 为准，文档变更后需要同步 schema。
+本文档定义当前内容字段。代码实现以 `src/content.config.ts` 为准，文档变更后需要同步 schema。
 
 ## 当前 blog 字段
 
@@ -12,6 +12,10 @@
 | `updatedDate` | `date` | 否 | 更新时间 |
 | `heroImage` | `image` | 否 | 文章封面图 |
 | `tags` | `string[]` | 否 | 标签，默认为空数组 |
+| `topics` | `string[]` | 否 | 引用 `src/content/topics/` 的专题 slug |
+| `series` | `{ slug, order }` | 否 | 引用 `src/content/series/` 的阅读系列 |
+| `featured` | `boolean` | 否 | 是否进入精选入口，默认为 `false` |
+| `canonicalURL` | `url` | 否 | 外部首发或转载 canonical |
 | `draft` | `boolean` | 否 | 草稿，默认为 `false` |
 
 示例：
@@ -23,6 +27,9 @@ description: "记录从功能增强到发布流程固化的过程。"
 pubDate: 2026-05-22
 updatedDate: 2026-05-22
 tags: ["Astro", "博客", "工程化"]
+topics: ["site-engineering"]
+series: { slug: "astro-blog-upgrade", order: 1 }
+featured: false
 draft: true
 ---
 ```
@@ -48,18 +55,27 @@ draft: true
 - 同义标签只保留一个写法，例如不要同时使用 `Astro` 和 `astro`。
 - 新标签如果只会使用一次，可以先考虑是否适合放进正文关键词，而不是 frontmatter。
 
-## v3.0 候选字段
+## 专题规则
 
-这些字段还没有全部实现，实施前需要同步 schema、模板和页面消费方。
+- 专题是主导航结构，用少量稳定主题连接文章、笔记和项目。
+- `topics` 中的 slug 必须存在于 `src/content/topics/`。
+- 专题页会聚合文章、笔记和项目。
 
-| 字段 | 类型 | 目的 | 优先级 |
-|---|---|---|---|
-| `featured` | `boolean` | 首页或专题页精选 | P0 |
-| `series` | `string` 或对象 | 系列文章导航 | P0 |
-| `coverAlt` | `string` | 封面图可访问性文本 | P0 |
-| `canonicalURL` | `string` | 外部首发或转载 canonical | P1 |
-| `lang` | `zh-CN` / `en` | 未来双语预留 | P2 |
-| `status` | `draft` / `published` / `archived` | 替代单一 draft 的更细状态 | P2 |
+## 系列规则
+
+- 系列用于连续阅读路径，适合跨文章和笔记组织内容。
+- `series.slug` 必须存在于 `src/content/series/`。
+- 同一系列中的公开内容 `series.order` 必须唯一。
+
+## 4.0 内容集合
+
+| 集合 | 作用 |
+|---|---|
+| `blog` | 长文章和 MDX 文章 |
+| `notes` | 短笔记 |
+| `projects` | 项目详情 |
+| `topics` | 高层知识专题 |
+| `series` | 连续阅读路径 |
 
 ## 设计原则
 

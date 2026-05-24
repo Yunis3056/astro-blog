@@ -15,6 +15,28 @@
 			<input id="searchInput" type="search" placeholder="搜索文章、笔记、项目…" autocomplete="off" />
 			<button class="esc" data-close aria-label="关闭">ESC</button>
 		</div>
+		<div class="search-filters">
+			<label>
+				<span>类型</span>
+				<select id="searchType"><option value="">全部</option></select>
+			</label>
+			<label>
+				<span>专题</span>
+				<select id="searchTopic"><option value="">全部</option></select>
+			</label>
+			<label>
+				<span>标签</span>
+				<select id="searchTag"><option value="">全部</option></select>
+			</label>
+			<label>
+				<span>排序</span>
+				<select id="searchSort">
+					<option value="relevance">相关</option>
+					<option value="date-desc">最新</option>
+					<option value="date-asc">最早</option>
+				</select>
+			</label>
+		</div>
 		<div id="searchResults" class="search-results"></div>
 		<div class="search-foot">
 			<span><kbd>↑↓</kbd> 导航</span>
@@ -30,11 +52,54 @@ function __searchInit(){
 	const modal = document.getElementById('searchModal');
 	const input = document.getElementById('searchInput');
 	const results = document.getElementById('searchResults');
-	if (!btn || !modal || !input || !results || btn.dataset.searchBound) return;
+	const typeSelect = document.getElementById('searchType');
+	const topicSelect = document.getElementById('searchTopic');
+	const tagSelect = document.getElementById('searchTag');
+	const sortSelect = document.getElementById('searchSort');
+	if (!btn || !modal || !input || !results || !typeSelect || !topicSelect || !tagSelect || !sortSelect || btn.dataset.searchBound) return;
 	btn.dataset.searchBound = '1';
 	let pagefind = null;
 	let activeIdx = 0;
 	let items = [];
+	let filtersLoaded = false;
+
+	const escapeHtml = (value = '') => String(value)
+		.replaceAll('&', '&amp;')
+		.replaceAll('<', '&lt;')
+		.replaceAll('>', '&gt;')
+		.replaceAll('"', '&quot;')
+		.replaceAll("'", '&#39;');
+
+	const normalizeMeta = (value) => {
+		if (!value) return [];
+		return Array.isArray(value) ? value.filter(Boolean) : [value].filter(Boolean);
+	};
+
+	const valueCountEntries = (value) => {
+		if (!value) return [];
+		if (Array.isArray(value)) return value.map((item) => [item, 0]);
+		return Object.entries(value);
+	};
+
+	const fillSelect = (select, values) => {
+		const current = select.value;
+		const options = valueCountEntries(values)
+			.filter(([value]) => value)
+			.sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'zh-CN'));
+		select.innerHTML = '<option value="">全部</option>' + options
+			.map(([value, count]) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}${count ? ` (${count})` : ''}</option>`)
+			.join('');
+		if ([...select.options].some((option) => option.value === current)) select.value = current;
+	};
+
+	const loadFilterOptions = async () => {
+		if (!pagefind || filtersLoaded || !pagefind.filters) return;
+		const available = await pagefind.filters();
+		fillSelect(typeSelect, available.type);
+		fillSelect(topicSelect, available.topic);
+		fillSelect(tagSelect, available.tag);
+		filtersLoaded = true;
+	};
 
 	const open = async () => {
 		modal.style.display = "flex";
@@ -44,6 +109,7 @@ function __searchInit(){
 			try {
 				pagefind = await import(/* @vite-ignore */ '/pagefind/pagefind.js');
 				await pagefind.options({ excerptLength: 28 });
+				await loadFilterOptions();
 			} catch (e) {
 				results.innerHTML = '<p class="hint">搜索索引未生成。请运行 <code>npm run build</code> 后再试。</p>';
 			}
@@ -92,22 +158,52 @@ function __searchInit(){
 	};
 
 	let timer = 0;
-	input.dataset.searchBound = '1';
-	input.addEventListener('input', () => {
+	const performSearch = () => {
 		clearTimeout(timer);
 		timer = setTimeout(async () => {
 			const q = input.value.trim();
-			if (!q || !pagefind) { results.innerHTML = ''; items = []; return; }
-			const search = await pagefind.search(q);
+			if (!pagefind) { results.innerHTML = ''; items = []; return; }
+			const filters = {};
+			if (typeSelect.value) filters.type = typeSelect.value;
+			if (topicSelect.value) filters.topic = topicSelect.value;
+			if (tagSelect.value) filters.tag = tagSelect.value;
+			const options = {};
+			if (Object.keys(filters).length > 0) options.filters = filters;
+			if (sortSelect.value === 'date-desc') options.sort = { date: 'desc' };
+			if (sortSelect.value === 'date-asc') options.sort = { date: 'asc' };
+			if (!q && Object.keys(filters).length === 0) {
+				results.innerHTML = '<p class="hint">输入关键词，或选择筛选条件。</p>';
+				items = [];
+				return;
+			}
+			const search = await pagefind.search(q || null, options);
 			const docs = await Promise.all(search.results.slice(0, 8).map((r) => r.data()));
-			items = docs.map((d) => ({ url: d.url, title: d.meta?.title || d.url, excerpt: d.excerpt }));
+			items = docs.map((d) => ({
+				url: d.url,
+				title: d.meta?.title || d.url,
+				excerpt: d.excerpt,
+				type: normalizeMeta(d.meta?.type)[0] || '内容',
+				date: normalizeMeta(d.meta?.date)[0] || '',
+				topics: normalizeMeta(d.meta?.topic),
+				tags: normalizeMeta(d.meta?.tag),
+			}));
 			activeIdx = 0;
 			results.innerHTML = items.map((it, i) => `
-				<a class="result${i === 0 ? ' active' : ''}" href="${it.url}">
-					<span class="r-title">${it.title}</span>
+				<a class="result${i === 0 ? ' active' : ''}" href="${escapeHtml(it.url)}" data-plausible-event="Search Result Click" data-plausible-props-type="${escapeHtml(it.type)}">
+					<span class="r-meta">
+						<span>${escapeHtml(it.type)}</span>
+						${it.date ? `<span>${escapeHtml(it.date)}</span>` : ''}
+					</span>
+					<span class="r-title">${escapeHtml(it.title)}</span>
 					<span class="r-excerpt">${it.excerpt}</span>
+					<span class="r-chips">${[...it.topics, ...it.tags].slice(0, 4).map((chip) => `<em>${escapeHtml(chip)}</em>`).join('')}</span>
 				</a>`).join('') || '<p class="hint">没有匹配结果。</p>';
 		}, 120);
+	};
+	input.dataset.searchBound = '1';
+	input.addEventListener('input', performSearch);
+	[typeSelect, topicSelect, tagSelect, sortSelect].forEach((select) => {
+		select.addEventListener('change', performSearch);
 	});
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", __searchInit); else __searchInit();
@@ -171,6 +267,37 @@ document.addEventListener("astro:page-load", __searchInit);
 		background: rgb(var(--bg-soft)); border: 1px solid rgb(var(--line));
 		color: rgb(var(--muted)); cursor: pointer;
 	}
+	.search-filters {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 0.6rem;
+		padding: 0.75rem 1rem;
+		border-bottom: 1px solid rgb(var(--line));
+		background: rgba(var(--bg-soft), 0.55);
+	}
+	.search-filters label {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		min-width: 0;
+	}
+	.search-filters span {
+		font-family: var(--font-mono);
+		font-size: 0.66rem;
+		letter-spacing: 0.08em;
+		color: rgb(var(--muted));
+	}
+	.search-filters select {
+		width: 100%;
+		min-width: 0;
+		border: 1px solid rgb(var(--line));
+		border-radius: 8px;
+		background: rgb(var(--bg));
+		color: rgb(var(--ink));
+		font: inherit;
+		font-size: 0.82rem;
+		padding: 0.4rem 0.45rem;
+	}
 
 	.search-results { max-height: 50vh; overflow-y: auto; padding: 0.4rem; }
 	.search-results .hint { padding: 1rem 0.8rem; color: rgb(var(--muted)); font-size: 0.9rem; }
@@ -184,6 +311,28 @@ document.addEventListener("astro:page-load", __searchInit);
 	.r-title { font-weight: 500; font-size: 0.95rem; }
 	.r-excerpt { font-size: 0.82rem; color: rgb(var(--muted)); line-height: 1.5; }
 	.r-excerpt :global(mark) { background: rgba(var(--accent), 0.25); color: rgb(var(--ink)); padding: 0 2px; border-radius: 2px; }
+	.r-meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem;
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		color: rgb(var(--muted));
+		letter-spacing: 0.06em;
+	}
+	.r-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+	}
+	.r-chips em {
+		font-style: normal;
+		font-size: 0.68rem;
+		color: rgb(var(--ink-soft));
+		border: 1px solid rgb(var(--line));
+		border-radius: 999px;
+		padding: 0.05rem 0.42rem;
+	}
 
 	.search-foot {
 		display: flex; gap: 1.2rem; padding: 0.6rem 1.2rem;
@@ -193,5 +342,8 @@ document.addEventListener("astro:page-load", __searchInit);
 	}
 	.search-foot kbd { font-family: var(--font-mono); background: rgb(var(--bg)); padding: 0 0.3rem; border-radius: 3px; border: 1px solid rgb(var(--line)); }
 
-	@media (max-width: 720px) { .search-trigger .kbd { display: none; } }
+	@media (max-width: 720px) {
+		.search-trigger .kbd { display: none; }
+		.search-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	}
 </style>

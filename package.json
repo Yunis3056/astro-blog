@@ -12,6 +12,7 @@
 		"astro": "astro",
 		"check": "astro check",
 		"new": "node scripts/new-post.mjs",
+		"verify:content": "node scripts/verify-content.mjs",
 		"verify:dist": "node scripts/verify-dist.mjs",
 		"verify:links": "node scripts/verify-links.mjs",
 		"postbuild": "pagefind --site dist"

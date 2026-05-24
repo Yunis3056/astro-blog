@@ -4,6 +4,9 @@ description: '一篇用于测试标题、列表、表格、引用和代码块显
 pubDate: '2026-05-12'
 heroImage: '../../assets/blog-placeholder-1.jpg'
 tags: ['参考', 'Markdown']
+topics: ['writing-system']
+series: { slug: 'writing-workflow', order: 3 }
+featured: false
 ---
 
 这篇文章用于检查博客文章的基础排版。后续调整全局样式时，可以回到这里确认 Markdown 元素是否显示正常。

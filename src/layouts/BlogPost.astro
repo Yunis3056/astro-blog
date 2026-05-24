@@ -2,22 +2,47 @@
 import { Image } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
+import Comments from '../components/Comments.astro';
 import Effects from '../components/Effects.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
+import SearchMeta from '../components/SearchMeta.astro';
 import TagList from '../components/TagList.astro';
+import { hrefForEntry, labelForEntry, type SearchableEntry } from '../lib/content';
 
 interface Heading { depth: number; slug: string; text: string; }
 
 type Props = CollectionEntry<'blog'>['data'] & {
+	slug?: string;
 	headings?: Heading[];
 	body?: string;
 	prev?: CollectionEntry<'blog'> | null;
 	next?: CollectionEntry<'blog'> | null;
+	topicEntries?: CollectionEntry<'topics'>[];
+	seriesEntry?: CollectionEntry<'series'> | null;
+	seriesItems?: SearchableEntry[];
+	relatedPosts?: CollectionEntry<'blog'>[];
 };
 
-const { title, description, pubDate, updatedDate, heroImage, tags = [], headings = [], body = '', prev = null, next = null } = Astro.props;
+const {
+	title,
+	description,
+	pubDate,
+	updatedDate,
+	heroImage,
+	tags = [],
+	canonicalURL,
+	slug = Astro.params.slug || '',
+	headings = [],
+	body = '',
+	prev = null,
+	next = null,
+	topicEntries = [],
+	seriesEntry = null,
+	seriesItems = [],
+	relatedPosts = [],
+} = Astro.props;
 
 // 只取 h2 / h3
 const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
@@ -26,11 +51,14 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
 const cn = (body.match(/[一-龥]/g) || []).length;
 const en = (body.replace(/[一-龥]/g, ' ').trim().split(/\s+/).filter(Boolean)).length;
 const readingMin = Math.max(1, Math.round(cn / 350 + en / 220));
+const currentHref = `/blog/${slug}/`;
+const seriesIndex = seriesItems.findIndex((item) => hrefForEntry(item) === currentHref);
+const topicNames = topicEntries.map((topic) => topic.data.title);
 ---
 
 <html lang="zh-CN">
 	<head>
-		<BaseHead title={title} description={description} ogImage={`/og/${Astro.params.slug || ''}.png`} />
+		<BaseHead title={title} description={description} ogImage={`/og/${slug}.png`} canonicalURL={canonicalURL} />
 	</head>
 	<body>
 		<div class="progress-bar" id="progressBar" aria-hidden="true"></div>
@@ -48,6 +76,12 @@ const readingMin = Math.max(1, Math.round(cn / 350 + en / 220));
 						</div>
 						<h1 class="post-title" data-pagefind-meta="title">{title}</h1>
 						<p class="post-desc">{description}</p>
+						<SearchMeta type="文章" date={pubDate} topics={topicNames} tags={tags} series={seriesEntry?.data.title} />
+						{topicEntries.length > 0 && (
+							<div class="post-topics">
+								{topicEntries.map((topic) => <a href={`/topics/${topic.id}/`}>{topic.data.title}</a>)}
+							</div>
+						)}
 						{tags.length > 0 && <div class="post-tags"><TagList tags={tags} /></div>}
 					</div>
 
@@ -57,9 +91,46 @@ const readingMin = Math.max(1, Math.round(cn / 350 + en / 220));
 						</div>
 					)}
 
+					{seriesEntry && seriesItems.length > 0 && (
+						<section class="series-panel reveal" aria-labelledby="series-title">
+							<div class="series-head">
+								<p class="eyebrow small">系列</p>
+								<h2 id="series-title">{seriesEntry.data.title}</h2>
+								<p>{seriesEntry.data.description}</p>
+							</div>
+							<ol>
+								{seriesItems.map((item, index) => (
+									<li class:list={{ active: index === seriesIndex }}>
+										<a href={hrefForEntry(item)}>
+											<span>{String(index + 1).padStart(2, '0')}</span>
+											<strong>{item.data.title}</strong>
+											<em>{labelForEntry(item)}</em>
+										</a>
+									</li>
+								))}
+							</ol>
+						</section>
+					)}
+
 					<div class="prose reveal" id="postProse" data-pagefind-body>
 						<slot />
 					</div>
+
+					{relatedPosts.length > 0 && (
+						<section class="related-posts reveal" aria-labelledby="related-title">
+							<p class="eyebrow small">继续阅读</p>
+							<h2 id="related-title">和这篇相关的文章</h2>
+							<div class="related-grid">
+								{relatedPosts.map((post) => (
+									<a class="related-card" href={`/blog/${post.id}/`}>
+										<span><FormattedDate date={post.data.pubDate} /></span>
+										<strong>{post.data.title}</strong>
+										<p>{post.data.description}</p>
+									</a>
+								))}
+							</div>
+						</section>
+					)}
 
 					{(prev || next) && (
 						<nav class="post-nav" aria-label="文章导航">
@@ -77,6 +148,7 @@ const readingMin = Math.max(1, Math.round(cn / 350 + en / 220));
 							)}
 						</nav>
 					)}
+					<Comments />
 					<a class="back magnetic" href="/blog" data-magnetic="0.25">
 						<span class="arrow">←</span> 返回文章列表
 					</a>
@@ -213,6 +285,24 @@ const readingMin = Math.max(1, Math.round(cn / 350 + en / 220));
 				font-style: italic;
 				margin: 0 0 1.5rem;
 			}
+			.post-topics {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem;
+				margin-bottom: 1rem;
+			}
+			.post-topics a {
+				display: inline-flex;
+				align-items: center;
+				min-height: 28px;
+				padding: 0.16rem 0.7rem;
+				border: 1px solid rgba(var(--accent), 0.28);
+				border-radius: 999px;
+				background: rgba(var(--accent), 0.08);
+				color: rgb(var(--accent));
+				font-size: 0.78rem;
+				font-weight: 600;
+			}
 			.post-tags { margin: 0 0 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid rgb(var(--line)); }
 
 			.hero-image {
@@ -243,6 +333,93 @@ const readingMin = Math.max(1, Math.round(cn / 350 + en / 220));
 			.prose :global(a:hover) { background-size: 100% 100%; color: rgb(var(--bg)); }
 
 			.updated { font-style: italic; color: rgb(var(--muted)); }
+			.series-panel {
+				margin: 0 0 3rem;
+				padding: 1.4rem;
+				border: 1px solid rgb(var(--line));
+				border-radius: var(--radius);
+				background: rgba(var(--bg-soft), 0.65);
+			}
+			.series-head h2,
+			.related-posts h2 {
+				margin: 0 0 0.55rem;
+				font-size: 1.5rem;
+				letter-spacing: 0;
+			}
+			.series-head p { margin: 0 0 1rem; font-size: 0.92rem; }
+			.eyebrow.small {
+				margin-bottom: 0.6rem;
+				font-size: 0.68rem;
+			}
+			.series-panel ol {
+				list-style: none;
+				display: grid;
+				gap: 0.45rem;
+				margin: 0;
+				padding: 0;
+			}
+			.series-panel a {
+				display: grid;
+				grid-template-columns: 38px 1fr auto;
+				gap: 0.8rem;
+				align-items: center;
+				padding: 0.65rem 0.8rem;
+				border-radius: var(--radius-sm);
+				color: rgb(var(--ink));
+			}
+			.series-panel li.active a,
+			.series-panel a:hover {
+				background: rgba(var(--accent), 0.1);
+			}
+			.series-panel span {
+				font-family: var(--font-mono);
+				font-size: 0.72rem;
+				color: rgb(var(--muted));
+			}
+			.series-panel strong {
+				font-size: 0.95rem;
+				line-height: 1.35;
+			}
+			.series-panel em {
+				font-style: normal;
+				font-size: 0.72rem;
+				color: rgb(var(--muted));
+			}
+			.related-posts {
+				margin: 4rem 0 0;
+				padding-top: 2.5rem;
+				border-top: 1px solid rgb(var(--line));
+			}
+			.related-grid {
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				gap: 0.8rem;
+			}
+			.related-card {
+				display: flex;
+				flex-direction: column;
+				gap: 0.5rem;
+				padding: 1rem;
+				border: 1px solid rgb(var(--line));
+				border-radius: var(--radius-sm);
+				color: rgb(var(--ink));
+				background: rgba(var(--bg-soft), 0.5);
+			}
+			.related-card:hover { border-color: rgba(var(--accent), 0.45); }
+			.related-card span {
+				font-family: var(--font-mono);
+				font-size: 0.7rem;
+				color: rgb(var(--muted));
+			}
+			.related-card strong {
+				line-height: 1.35;
+			}
+			.related-card p {
+				margin: 0;
+				font-size: 0.82rem;
+				line-height: 1.55;
+				color: rgb(var(--ink-soft));
+			}
 			.back {
 				display: inline-flex; align-items: center; gap: 0.4rem;
 				margin: 4rem 0 0;
@@ -302,6 +479,9 @@ const readingMin = Math.max(1, Math.round(cn / 350 + en / 220));
 			}
 			@media (max-width: 720px) {
 				.toc-aside { display: none; }
+				.series-panel a { grid-template-columns: 32px 1fr; }
+				.series-panel em { grid-column: 2; }
+				.related-grid { grid-template-columns: 1fr; }
 			}
 
 			.post-nav {

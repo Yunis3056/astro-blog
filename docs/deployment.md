@@ -14,6 +14,7 @@ Windows PowerShell 下建议使用 `npm.cmd`，避免执行策略影响 `npm.ps1
 ```sh
 npm install
 npm.cmd run check
+npm.cmd run verify:content
 npm.cmd run build
 npm.cmd run verify:dist
 npm.cmd run verify:links
@@ -34,7 +35,7 @@ npm.cmd run verify:links
 
 - 触发范围：`dev` 和 `main` 的 push / pull request。
 - Node.js：`22.12.0`。
-- 执行步骤：`npm ci`、`npm run check`、`npm run build`、`npm run verify:dist`、`npm run verify:links`。
+- 执行步骤：`npm ci`、`npm run check`、`npm run verify:content`、`npm run build`、`npm run verify:dist`、`npm run verify:links`。
 - 链接策略：只阻塞内部链接、图片路径和锚点错误；外部链接第一版不阻塞发布。
 - 自动化范围：只做验证，不负责自动部署。
 
@@ -81,6 +82,13 @@ npm run build
 
 生产域名变化时必须同步更新 `site`。
 
+## 可选外部服务
+
+这些变量不配置时站点仍可构建，并使用静态降级入口：
+
+- `PUBLIC_PLAUSIBLE_DOMAIN`：启用 Plausible 统计脚本和点击事件。
+- `PUBLIC_GISCUS_REPO`、`PUBLIC_GISCUS_REPO_ID`、`PUBLIC_GISCUS_CATEGORY`、`PUBLIC_GISCUS_CATEGORY_ID`：启用 Giscus 评论。
+
 ## 部署验收
 
 - 首页、文章列表、文章详情可访问。
@@ -88,4 +96,5 @@ npm run build
 - `/sitemap-index.xml` 或 sitemap 输出可访问。
 - `/pagefind/pagefind.js` 可访问。
 - 至少一张 `/og/*.png` 可访问。
-- 明暗主题切换、搜索弹窗、ClientRouter 切页后交互正常。
+- `/topics/`、`/series/` 可访问。
+- 明暗主题切换、搜索筛选、评论降级入口、ClientRouter 切页后交互正常。

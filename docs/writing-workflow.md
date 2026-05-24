@@ -14,6 +14,8 @@ npm.cmd run new "文章标题"
 - `description` 是否能作为列表摘要。
 - `pubDate` 是否是预期日期。
 - `tags` 是否使用规范标签。
+- `topics` 是否引用已存在专题。
+- `series` 是否引用已存在系列，且 `order` 不重复。
 - `draft` 发布前是否改为 `false`。
 
 ## 本地预览
@@ -35,12 +37,14 @@ npm.cmd run dev
 
 ```sh
 npm.cmd run check
+npm.cmd run verify:content
 npm.cmd run build
 ```
 
 检查项：
 
 - 没有 Astro / TypeScript 诊断错误。
+- 专题 / 系列引用通过验证。
 - 构建成功。
 - RSS、标签页、归档页不包含草稿。
 - 搜索索引生成成功。
@@ -51,6 +55,8 @@ npm.cmd run build
 - [ ] `draft: false`
 - [ ] `description` 已写好
 - [ ] `tags` 已规范化
+- [ ] `topics` 已选择
+- [ ] 如属于系列，`series.slug` 和 `series.order` 已确认
 - [ ] 文章末尾没有临时笔记
 - [ ] 移动端排版不溢出
 - [ ] `npm.cmd run check` 通过

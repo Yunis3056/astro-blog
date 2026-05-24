@@ -24,6 +24,8 @@ title: '${title.replace(/'/g, "\\'")}'
 description: ''
 pubDate: '${today}'
 tags: [${tags}]
+topics: []
+featured: false
 draft: true
 ---
 
@@ -48,6 +50,8 @@ title: '${title.replace(/'/g, "\\'")}'
 description: ''
 pubDate: '${today}'
 tags: [${tags}]
+topics: []
+featured: false
 draft: true
 ---
 
@@ -70,6 +74,8 @@ title: '${title.replace(/'/g, "\\'")}'
 description: ''
 pubDate: '${today}'
 tags: [${tags}]
+topics: []
+featured: false
 draft: true
 ---
 

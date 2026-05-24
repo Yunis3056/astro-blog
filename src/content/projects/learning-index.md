@@ -6,6 +6,8 @@ stack: ["内容整理", "自动化"]
 order: 2
 repoUrl: ""
 demoUrl: ""
+topics: ["learning-notes", "project-practice"]
+featured: true
 draft: false
 ---
 

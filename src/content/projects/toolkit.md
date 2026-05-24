@@ -6,6 +6,8 @@ stack: ["TypeScript", "Web APIs"]
 order: 3
 repoUrl: ""
 demoUrl: ""
+topics: ["project-practice"]
+featured: false
 draft: false
 ---
 

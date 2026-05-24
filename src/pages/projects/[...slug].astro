@@ -4,7 +4,9 @@ import BaseHead from '../../components/BaseHead.astro';
 import Effects from '../../components/Effects.astro';
 import Footer from '../../components/Footer.astro';
 import Header from '../../components/Header.astro';
+import SearchMeta from '../../components/SearchMeta.astro';
 import { SITE_TITLE } from '../../consts';
+import { getTopicMap } from '../../lib/content';
 
 const statusLabels = {
 	active: '进行中',
@@ -27,6 +29,10 @@ const { project } = Astro.props as { project: CollectionEntry<'projects'> };
 const { Content } = await render(project);
 const repoUrl = project.data.repoUrl || '';
 const demoUrl = project.data.demoUrl || '';
+const topicMap = await getTopicMap();
+const topicEntries = project.data.topics
+	.map((topic) => topicMap.get(topic))
+	.filter((topic): topic is CollectionEntry<'topics'> => Boolean(topic));
 ---
 
 <!doctype html>
@@ -48,6 +54,16 @@ const demoUrl = project.data.demoUrl || '';
 						</span>
 					</div>
 					<p class="lede">{project.data.description}</p>
+					<SearchMeta
+						type="项目"
+						topics={topicEntries.map((topic) => topic.data.title)}
+						tags={project.data.stack}
+					/>
+					{topicEntries.length > 0 && (
+						<div class="topics">
+							{topicEntries.map((topic) => <a href={`/topics/${topic.id}/`}>{topic.data.title}</a>)}
+						</div>
+					)}
 					<div class="meta-row">
 						{project.data.stack.length > 0 && <span>{project.data.stack.join(' · ')}</span>}
 						{repoUrl && <a href={repoUrl} target="_blank" rel="noreferrer">仓库</a>}
@@ -80,6 +96,20 @@ const demoUrl = project.data.demoUrl || '';
 		font-size: 0.78rem; letter-spacing: 0.06em;
 		color: rgb(var(--muted));
 		text-transform: uppercase;
+	}
+	.topics {
+		display: flex; flex-wrap: wrap; gap: 0.45rem;
+		margin-top: 1.2rem;
+	}
+	.topics a {
+		display: inline-flex; align-items: center;
+		min-height: 26px; padding: 0.12rem 0.62rem;
+		border: 1px solid rgba(var(--accent), 0.28);
+		border-radius: 999px;
+		background: rgba(var(--accent), 0.08);
+		color: rgb(var(--accent));
+		font-size: 0.74rem;
+		font-weight: 600;
 	}
 	.meta-row a {
 		padding: 0.18rem 0.55rem;

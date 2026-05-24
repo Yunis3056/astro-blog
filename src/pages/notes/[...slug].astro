@@ -5,7 +5,9 @@ import Effects from '../../components/Effects.astro';
 import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
+import SearchMeta from '../../components/SearchMeta.astro';
 import { SITE_TITLE } from '../../consts';
+import { getSeriesMap, getTopicMap } from '../../lib/content';
 
 export async function getStaticPaths() {
 	const notes = (await getCollection('notes'))
@@ -19,6 +21,11 @@ export async function getStaticPaths() {
 
 const { note } = Astro.props as { note: CollectionEntry<'notes'> };
 const { Content } = await render(note);
+const [topicMap, seriesMap] = await Promise.all([getTopicMap(), getSeriesMap()]);
+const topicEntries = note.data.topics
+	.map((topic) => topicMap.get(topic))
+	.filter((topic): topic is CollectionEntry<'topics'> => Boolean(topic));
+const seriesEntry = note.data.series ? seriesMap.get(note.data.series.slug) ?? null : null;
 ---
 
 <!doctype html>
@@ -36,6 +43,18 @@ const { Content } = await render(note);
 					<div class="note-date"><FormattedDate date={note.data.pubDate} /></div>
 					<h1 data-pagefind-meta="title">{note.data.title}</h1>
 					<p class="lede">{note.data.description}</p>
+					<SearchMeta
+						type="笔记"
+						date={note.data.pubDate}
+						topics={topicEntries.map((topic) => topic.data.title)}
+						tags={note.data.tags}
+						series={seriesEntry?.data.title}
+					/>
+					{topicEntries.length > 0 && (
+						<div class="topics">
+							{topicEntries.map((topic) => <a href={`/topics/${topic.id}/`}>{topic.data.title}</a>)}
+						</div>
+					)}
 					{note.data.tags.length > 0 && (
 						<div class="tags">
 							{note.data.tags.map((tag) => <span>{tag}</span>)}
@@ -66,6 +85,20 @@ const { Content } = await render(note);
 	.tags {
 		display: flex; flex-wrap: wrap; gap: 0.4rem;
 		margin-top: 1.4rem;
+	}
+	.topics {
+		display: flex; flex-wrap: wrap; gap: 0.45rem;
+		margin-top: 1.4rem;
+	}
+	.topics a {
+		display: inline-flex; align-items: center;
+		min-height: 26px; padding: 0.12rem 0.62rem;
+		border: 1px solid rgba(var(--accent), 0.28);
+		border-radius: 999px;
+		background: rgba(var(--accent), 0.08);
+		color: rgb(var(--accent));
+		font-size: 0.74rem;
+		font-weight: 600;
 	}
 	.tags span {
 		display: inline-flex; align-items: center;

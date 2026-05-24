@@ -4,6 +4,9 @@ description: '把开发过程写清楚，比单纯记录最终代码更容易复
 pubDate: '2026-05-14'
 heroImage: '../../assets/blog-placeholder-2.jpg'
 tags: ['项目', '复盘']
+topics: ['project-practice', 'writing-system']
+series: { slug: 'writing-workflow', order: 2 }
+featured: false
 ---
 
 开发记录的价值不在于把每一行代码都解释一遍，而在于把判断过程留下来。以后遇到类似问题时，真正有帮助的是当时为什么这么选。

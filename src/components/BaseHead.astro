@@ -13,12 +13,13 @@ interface Props {
 	description: string;
 	image?: ImageMetadata;
 	ogImage?: string;
+	canonicalURL?: string;
 }
 
-const canonicalURL = new URL(Astro.url.pathname, Astro.site);
-
-const { title, description, image = FallbackImage, ogImage } = Astro.props;
+const { title, description, image = FallbackImage, ogImage, canonicalURL: canonicalOverride } = Astro.props;
+const canonicalURL = canonicalOverride ? new URL(canonicalOverride) : new URL(Astro.url.pathname, Astro.site);
 const ogUrl = ogImage ? new URL(ogImage, Astro.site) : new URL(image.src, Astro.url);
+const plausibleDomain = import.meta.env.PUBLIC_PLAUSIBLE_DOMAIN;
 ---
 
 <!-- Global Metadata -->
@@ -60,6 +61,10 @@ const ogUrl = ogImage ? new URL(ogImage, Astro.site) : new URL(image.src, Astro.
 <meta property="twitter:description" content={description} />
 <meta property="twitter:image" content={ogUrl} />
 
+{plausibleDomain && (
+	<script is:inline defer data-domain={plausibleDomain} src="https://plausible.io/js/script.js"></script>
+)}
+
 <script is:inline>
 (function(){
 	function getTheme(){
@@ -87,5 +92,31 @@ const ogUrl = ogImage ? new URL(ogImage, Astro.site) : new URL(image.src, Astro.
 	}
 })();
 </script>
+
+{plausibleDomain && (
+	<script is:inline>
+	(function(){
+		if (window.__plausibleEventsBound) return;
+		window.__plausibleEventsBound = true;
+		window.plausible = window.plausible || function(){ (window.plausible.q = window.plausible.q || []).push(arguments); };
+		document.addEventListener('click', function(event){
+			var el = event.target && event.target.closest ? event.target.closest('[data-plausible-event], a[href^="http"]') : null;
+			if (!el) return;
+			var eventName = el.getAttribute('data-plausible-event');
+			var props = {};
+			Array.prototype.forEach.call(el.attributes || [], function(attr){
+				if (!attr.name.startsWith('data-plausible-props-')) return;
+				var key = attr.name.replace('data-plausible-props-', '');
+				props[key] = attr.value;
+			});
+			if (!eventName && el.matches('a[href^="http"]')) {
+				eventName = 'Outbound Link';
+				props.url = el.href;
+			}
+			if (eventName) window.plausible(eventName, { props: props });
+		});
+	})();
+	</script>
+)}
 
 <ClientRouter />

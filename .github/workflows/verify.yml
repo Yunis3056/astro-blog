@@ -34,6 +34,9 @@ jobs:
       - name: Type and Astro check
         run: npm run check
 
+      - name: Verify content model
+        run: npm run verify:content
+
       - name: Build site
         run: npm run build
 

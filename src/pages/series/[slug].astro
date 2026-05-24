@@ -1,0 +1,122 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Effects from '../../components/Effects.astro';
+import Footer from '../../components/Footer.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import Header from '../../components/Header.astro';
+import { SITE_TITLE } from '../../consts';
+import {
+	entriesForSeries,
+	getPublicSeries,
+	getSearchableEntries,
+	hrefForEntry,
+	labelForEntry,
+	seriesForEntry,
+	type SearchableEntry,
+} from '../../lib/content';
+
+export async function getStaticPaths() {
+	const [series, entries] = await Promise.all([getPublicSeries(), getSearchableEntries()]);
+	return series.map((item) => ({
+		params: { slug: item.id },
+		props: { series: item, entries: entriesForSeries(entries, item.id) },
+	}));
+}
+
+const { series, entries } = Astro.props as {
+	series: CollectionEntry<'series'>;
+	entries: SearchableEntry[];
+};
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<BaseHead title={`${series.data.title} — 系列 — ${SITE_TITLE}`} description={series.data.description} />
+	</head>
+	<body>
+		<Effects />
+		<Header />
+		<main>
+			<section class="hero">
+				<p class="eyebrow reveal"><a href="/series/">← 返回系列</a></p>
+				<h1 class="reveal" style="--reveal-delay: 100ms">{series.data.title}</h1>
+				<p class="lede reveal" style="--reveal-delay: 200ms">{series.data.description}</p>
+			</section>
+
+			<section class="path">
+				{entries.map((entry, index) => (
+					<a class="node reveal" href={hrefForEntry(entry)} style={`--reveal-delay: ${index * 80}ms`}>
+						<span class="step">{String(seriesForEntry(entry)?.order ?? index + 1).padStart(2, '0')}</span>
+						<div>
+							<span class="type">{labelForEntry(entry)}</span>
+							<h2>{entry.data.title}</h2>
+							<p>{entry.data.description}</p>
+						</div>
+						<span class="date">
+							{'pubDate' in entry.data ? <FormattedDate date={entry.data.pubDate} /> : ''}
+						</span>
+					</a>
+				))}
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.hero { padding: 2rem 0 4rem; max-width: 760px; }
+	.lede { font-size: 1.08rem; color: rgb(var(--ink-soft)); }
+	.path {
+		display: flex;
+		flex-direction: column;
+		position: relative;
+	}
+	.path::before {
+		content: "";
+		position: absolute;
+		left: 22px;
+		top: 24px;
+		bottom: 24px;
+		width: 1px;
+		background: rgb(var(--line));
+	}
+	.node {
+		display: grid;
+		grid-template-columns: 46px minmax(0, 1fr) 120px;
+		gap: 1.2rem;
+		align-items: center;
+		padding: 1.15rem 0;
+		color: rgb(var(--ink));
+		position: relative;
+	}
+	.node:hover h2 { color: rgb(var(--accent)); }
+	.step {
+		display: grid;
+		place-items: center;
+		width: 46px;
+		height: 46px;
+		border-radius: 50%;
+		border: 1px solid rgb(var(--line));
+		background: rgb(var(--bg));
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: rgb(var(--accent));
+		z-index: 1;
+	}
+	.type, .date {
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		color: rgb(var(--muted));
+	}
+	.date { text-align: right; }
+	.node h2 { margin: 0.2rem 0 0.35rem; font-size: 1.25rem; transition: color 0.3s var(--ease); }
+	.node p { margin: 0; font-size: 0.9rem; color: rgb(var(--ink-soft)); }
+	@media (max-width: 720px) {
+		.node { grid-template-columns: 42px 1fr; gap: 0.8rem; }
+		.date { grid-column: 2; text-align: left; }
+		.path::before { left: 20px; }
+		.step { width: 42px; height: 42px; }
+	}
+</style>

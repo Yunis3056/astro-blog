@@ -130,17 +130,25 @@ expectFile(path.join(distDir, 'pagefind', 'pagefind-entry.json'));
 const blogEntries = collectionEntries('blog');
 const noteEntries = collectionEntries('notes');
 const projectEntries = collectionEntries('projects');
+const topicEntries = collectionEntries('topics');
+const seriesEntries = collectionEntries('series');
 const searchableEntries = [...blogEntries, ...noteEntries, ...projectEntries];
 const publicSearchableEntries = searchableEntries.filter((entry) => !entry.draft);
 const publicBlogEntries = blogEntries.filter((entry) => !entry.draft);
 const draftBlogEntries = blogEntries.filter((entry) => entry.draft);
 const draftSearchableEntries = searchableEntries.filter((entry) => entry.draft);
+const publicStructureEntries = [...topicEntries, ...seriesEntries].filter((entry) => !entry.draft);
+const draftStructureEntries = [...topicEntries, ...seriesEntries].filter((entry) => entry.draft);
 
 const rssText = readIfPresent(path.join(distDir, 'rss.xml'));
 const sitemapText = listFiles(distDir, ['.xml'])
 	.filter((filePath) => path.basename(filePath).includes('sitemap'))
 	.map(readText)
 	.join('\n');
+
+if (/@fs\/|(^|[^A-Za-z])[A-Za-z]:[\\/]/.test(rssText)) {
+	fail('RSS contains a local filesystem asset URL.');
+}
 
 for (const entry of publicSearchableEntries) {
 	const pagePath = contentPagePath(entry.collection, entry.slug);
@@ -152,7 +160,29 @@ for (const entry of publicSearchableEntries) {
 	}
 }
 
+for (const entry of publicStructureEntries) {
+	const pagePath = contentPagePath(entry.collection, entry.slug);
+	expectFile(pagePath, `${entry.collection} page for ${entry.slug}`);
+
+	const url = contentUrl(entry.collection, entry.slug);
+	if (!sitemapText.includes(url)) {
+		fail(`Sitemap is missing ${url}`);
+	}
+}
+
 for (const entry of draftSearchableEntries) {
+	const pagePath = contentPagePath(entry.collection, entry.slug);
+	const url = contentUrl(entry.collection, entry.slug);
+
+	if (exists(pagePath)) {
+		fail(`Draft page was generated: ${relative(pagePath)}`);
+	}
+	if (sitemapText.includes(url)) {
+		fail(`Sitemap includes draft URL ${url}`);
+	}
+}
+
+for (const entry of draftStructureEntries) {
 	const pagePath = contentPagePath(entry.collection, entry.slug);
 	const url = contentUrl(entry.collection, entry.slug);
 

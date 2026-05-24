@@ -3,6 +3,9 @@ title: "先把文章写成短笔记"
 description: "把还没稳定的想法先沉淀为短记录，等结构清楚后再整理成长文。"
 pubDate: 2026-05-22
 tags: ["写作", "方法"]
+topics: ["writing-system", "learning-notes"]
+series: { slug: "writing-workflow", order: 5 }
+featured: true
 draft: false
 ---
 

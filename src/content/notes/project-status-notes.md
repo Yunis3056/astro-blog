@@ -3,6 +3,8 @@ title: "项目页先记录状态和动机"
 description: "项目页先把目标、状态和动机说清楚，后续再补截图、仓库链接和复盘。"
 pubDate: 2026-05-22
 tags: ["项目", "复盘"]
+topics: ["project-practice"]
+featured: false
 draft: false
 ---
 

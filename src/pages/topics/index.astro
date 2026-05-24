@@ -1,0 +1,78 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Effects from '../../components/Effects.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import { SITE_TITLE } from '../../consts';
+import { getPublicTopics, getSearchableEntries, topicUsage } from '../../lib/content';
+
+const topics = await getPublicTopics();
+const entries = await getSearchableEntries();
+const counts = topicUsage(entries);
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<BaseHead title={`专题 — ${SITE_TITLE}`} description="按高层主题组织博客、笔记和项目。" />
+	</head>
+	<body>
+		<Effects />
+		<Header />
+		<main>
+			<section class="hero">
+				<p class="eyebrow reveal">知识入口</p>
+				<h1 class="reveal" style="--reveal-delay: 100ms">专题<em>地图</em></h1>
+				<p class="lede reveal" style="--reveal-delay: 200ms">用少量稳定主题连接文章、笔记和项目，比标签更适合长期回看。</p>
+			</section>
+
+			<section class="topic-grid">
+				{topics.map((topic, index) => (
+					<a class="topic spotlight reveal" href={`/topics/${topic.id}/`} style={`--reveal-delay: ${index * 90}ms`}>
+						<span class="num">{String(index + 1).padStart(2, '0')}</span>
+						<h2>{topic.data.title}</h2>
+						<p>{topic.data.description}</p>
+						<span class="count">{counts.get(topic.id) ?? 0} 条内容</span>
+					</a>
+				))}
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.hero { padding: 2rem 0 4rem; max-width: 760px; }
+	.hero h1 em { font-style: italic; color: rgb(var(--accent)); }
+	.lede { font-size: 1.05rem; color: rgb(var(--ink-soft)); }
+	.topic-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 1.25rem;
+	}
+	.topic {
+		display: flex;
+		flex-direction: column;
+		min-height: 240px;
+		padding: 1.6rem;
+		color: rgb(var(--ink));
+	}
+	.num {
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		color: rgb(var(--accent));
+		letter-spacing: 0.1em;
+	}
+	.topic h2 { margin: 1rem 0 0.65rem; font-size: 1.6rem; }
+	.topic p { margin: 0; flex: 1; color: rgb(var(--ink-soft)); }
+	.count {
+		margin-top: 1.2rem;
+		font-family: var(--font-mono);
+		font-size: 0.76rem;
+		color: rgb(var(--muted));
+		letter-spacing: 0.08em;
+	}
+	@media (max-width: 760px) {
+		.topic-grid { grid-template-columns: 1fr; }
+	}
+</style>

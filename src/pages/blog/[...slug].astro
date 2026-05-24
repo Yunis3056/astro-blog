@@ -1,6 +1,13 @@
 ---
 import { type CollectionEntry, getCollection, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
+import {
+	getSearchableEntries,
+	getSeriesMap,
+	getTopicMap,
+	relatedPostsFor,
+	entriesForSeries,
+} from '../../lib/content';
 
 export async function getStaticPaths() {
 	const posts = (await getCollection('blog'))
@@ -22,8 +29,33 @@ const { post, prev, next } = Astro.props as {
 	next: CollectionEntry<'blog'> | null;
 };
 const { Content, headings } = await render(post);
+const [posts, entries, topicMap, seriesMap] = await Promise.all([
+	(await getCollection('blog'))
+		.filter((p) => !p.data.draft)
+		.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()),
+	getSearchableEntries(),
+	getTopicMap(),
+	getSeriesMap(),
+]);
+const topicEntries = post.data.topics
+	.map((topic) => topicMap.get(topic))
+	.filter((topic): topic is CollectionEntry<'topics'> => Boolean(topic));
+const seriesEntry = post.data.series ? seriesMap.get(post.data.series.slug) ?? null : null;
+const seriesItems = post.data.series ? entriesForSeries(entries, post.data.series.slug) : [];
+const relatedPosts = relatedPostsFor(post, posts);
 ---
 
-<BlogPost {...post.data} headings={headings} body={post.body ?? ''} prev={prev} next={next}>
+<BlogPost
+	{...post.data}
+	slug={post.id}
+	headings={headings}
+	body={post.body ?? ''}
+	prev={prev}
+	next={next}
+	topicEntries={topicEntries}
+	seriesEntry={seriesEntry}
+	seriesItems={seriesItems}
+	relatedPosts={relatedPosts}
+>
 	<Content />
 </BlogPost>

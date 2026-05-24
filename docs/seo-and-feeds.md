@@ -55,11 +55,12 @@ OG 图片由 `src/pages/og/[...slug].png.ts` 生成。
 - 构建命令必须触发 `postbuild`。
 - 页面正文使用 `data-pagefind-body` 标记。
 - 标题使用 `data-pagefind-meta="title"`。
+- 内容详情页输出 `type`、`topic`、`tag`、`series` 元数据。
+- 内容详情页输出 `date` 排序字段，搜索弹窗可按日期排序。
 - 草稿不生成公开 HTML，因此不会进入索引。
 
-## v3.0 待加强
+## 4.0 外部增长入口
 
-- 搜索结果增加日期、标签等元信息。
-- 相关文章使用标签和系列作为主要依据。
-- 系列页输出更明确的 canonical 和结构化导航。
-- 外部首发内容支持 `canonicalURL`。
+- Giscus 通过 GitHub Discussions 承载评论，未配置时显示 Discussions 链接。
+- Plausible 只在 `PUBLIC_PLAUSIBLE_DOMAIN` 存在时输出脚本。
+- 外部首发内容可以使用 `canonicalURL` 覆盖 canonical。

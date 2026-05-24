@@ -1,0 +1,74 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Effects from '../../components/Effects.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import { SITE_TITLE } from '../../consts';
+import { entriesForSeries, getPublicSeries, getSearchableEntries } from '../../lib/content';
+
+const [series, entries] = await Promise.all([getPublicSeries(), getSearchableEntries()]);
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<BaseHead title={`系列 — ${SITE_TITLE}`} description="按阅读路径组织的连续内容。" />
+	</head>
+	<body>
+		<Effects />
+		<Header />
+		<main>
+			<section class="hero">
+				<p class="eyebrow reveal">阅读路径</p>
+				<h1 class="reveal" style="--reveal-delay: 100ms">系列<em>文章</em></h1>
+				<p class="lede reveal" style="--reveal-delay: 200ms">把散落的文章和笔记串成可连续阅读的路线。</p>
+			</section>
+
+			<section class="series-grid">
+				{series.map((item, index) => {
+					const count = entriesForSeries(entries, item.id).length;
+					return (
+						<a class="series-card spotlight reveal" href={`/series/${item.id}/`} style={`--reveal-delay: ${index * 90}ms`}>
+							<span class="num">{String(index + 1).padStart(2, '0')}</span>
+							<h2>{item.data.title}</h2>
+							<p>{item.data.description}</p>
+							<span class="count">{count} 个节点</span>
+						</a>
+					);
+				})}
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.hero { padding: 2rem 0 4rem; max-width: 760px; }
+	.hero h1 em { font-style: italic; color: rgb(var(--accent)); }
+	.lede { font-size: 1.05rem; color: rgb(var(--ink-soft)); }
+	.series-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 1.25rem;
+	}
+	.series-card {
+		display: flex;
+		flex-direction: column;
+		min-height: 230px;
+		padding: 1.6rem;
+		color: rgb(var(--ink));
+	}
+	.num, .count {
+		font-family: var(--font-mono);
+		font-size: 0.74rem;
+		color: rgb(var(--muted));
+		letter-spacing: 0.08em;
+	}
+	.num { color: rgb(var(--accent)); }
+	.series-card h2 { margin: 1rem 0 0.65rem; font-size: 1.55rem; }
+	.series-card p { margin: 0; flex: 1; color: rgb(var(--ink-soft)); }
+	.count { margin-top: 1.2rem; }
+	@media (max-width: 760px) {
+		.series-grid { grid-template-columns: 1fr; }
+	}
+</style>

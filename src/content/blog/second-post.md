@@ -4,6 +4,9 @@ description: '用少量稳定栏目支撑长期写作，避免站点一开始就
 pubDate: '2026-05-18'
 heroImage: '../../assets/blog-placeholder-4.jpg'
 tags: ['学习笔记', '方法论']
+topics: ['writing-system', 'learning-notes']
+series: { slug: 'writing-workflow', order: 1 }
+featured: true
 ---
 
 个人网站不需要一开始就做得很复杂。真正影响长期维护的是内容结构：入口是否清楚、栏目是否稳定、每类内容有没有明确用途。
