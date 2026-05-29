@@ -1,66 +1,27 @@
-# SEO 与 Feed
+# SEO 与 RSS
 
-本文档记录站点 SEO、RSS、Sitemap、OG 和搜索索引的约定。
+## 页面
 
-## 页面元信息
-
-`BaseHead.astro` 负责输出基础 head 信息。页面应提供：
-
-- `title`
-- `description`
-- canonical URL
-- Open Graph 信息
-- 主题初始化脚本
-
-文章页的 `title` 和 `description` 来自 frontmatter。
+- `BaseHead` 输出 canonical、Open Graph、Twitter Card、RSS 和 Sitemap 元信息。
+- 公开内容 URL 保持不变：`/blog/[slug]/`、`/notes/[slug]/`、`/projects/[slug]/`、`/topics/[slug]/`、`/series/[slug]/`。
+- 草稿只出现在 `/preview/**`，并用 `data-pagefind-ignore` 避免进入搜索索引。
 
 ## RSS
 
-RSS 由 `src/pages/rss.xml.js` 生成。
-
-规则：
-
-- 只包含 `draft: false` 的文章。
-- 优先输出完整正文 HTML。
-- 使用站点绝对 URL。
-- 发布时间来自 `pubDate`。
-- 更新时间来自 `updatedDate`，没有则不输出或使用发布时间。
+`/rss.xml` 从 Sanity 公开文章生成，正文由 Portable Text 渲染为清洗后的 HTML。封面图使用 Sanity 图片 URL，不再输出本地文件路径。
 
 ## Sitemap
 
-Sitemap 由 `@astrojs/sitemap` 生成，依赖 `astro.config.mjs` 中的 `site`。
+Sitemap 由 Astro 集成生成。公开页预渲染后进入 Sitemap，草稿不进入。
 
-规则：
+## Pagefind
 
-- 生产域名变化时必须更新 `site`。
-- 草稿页面不应被生成，因此也不应进入 sitemap。
+构建完成后运行 Pagefind。内容详情页通过 `SearchMeta` 输出：
 
-## OG 图片
+- `type`
+- `topic`
+- `tag`
+- `series`
+- `date`
 
-OG 图片由 `src/pages/og/[...slug].png.ts` 生成。
-
-规则：
-
-- 只为公开文章生成。
-- 使用本地字体资源，不依赖构建时联网。
-- 中文必须可读，不能出现方框。
-- 标题过长时要有合理换行或截断策略。
-
-## 搜索索引
-
-搜索使用 Pagefind，在 `postbuild` 阶段扫描 `dist/`。
-
-规则：
-
-- 构建命令必须触发 `postbuild`。
-- 页面正文使用 `data-pagefind-body` 标记。
-- 标题使用 `data-pagefind-meta="title"`。
-- 内容详情页输出 `type`、`topic`、`tag`、`series` 元数据。
-- 内容详情页输出 `date` 排序字段，搜索弹窗可按日期排序。
-- 草稿不生成公开 HTML，因此不会进入索引。
-
-## 4.0 外部增长入口
-
-- Giscus 通过 GitHub Discussions 承载评论，未配置时显示 Discussions 链接。
-- Plausible 只在 `PUBLIC_PLAUSIBLE_DOMAIN` 存在时输出脚本。
-- 外部首发内容可以使用 `canonicalURL` 覆盖 canonical。
+搜索弹窗按需加载 `/pagefind/pagefind.js`。

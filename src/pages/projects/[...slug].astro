@@ -1,48 +1,50 @@
 ---
-import { type CollectionEntry, getCollection, render } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Effects from '../../components/Effects.astro';
 import Footer from '../../components/Footer.astro';
 import Header from '../../components/Header.astro';
 import SearchMeta from '../../components/SearchMeta.astro';
-import { SITE_TITLE } from '../../consts';
-import { getTopicMap } from '../../lib/content';
+import { getPublicProjects, getSiteSettings, type ProjectEntry, type ProjectStatus } from '../../lib/content';
+import { portableTextToHtml } from '../../lib/sanity/portable-text';
 
-const statusLabels = {
+export const prerender = true;
+
+const statusLabels: Record<ProjectStatus, string> = {
 	active: '进行中',
 	planned: '规划中',
 	idle: '待启动',
 	done: '已完成',
-} as const;
+};
 
 export async function getStaticPaths() {
-	const projects = (await getCollection('projects'))
-		.filter((project) => !project.data.draft)
-		.sort((a, b) => a.data.order - b.data.order || a.data.title.localeCompare(b.data.title, 'zh-CN'));
+	const projects = await getPublicProjects();
 	return projects.map((project) => ({
 		params: { slug: project.id },
 		props: { project },
 	}));
 }
 
-const { project } = Astro.props as { project: CollectionEntry<'projects'> };
-const { Content } = await render(project);
+const { project } = Astro.props as { project: ProjectEntry };
+const settings = await getSiteSettings();
+const html = portableTextToHtml(project.data.body);
 const repoUrl = project.data.repoUrl || '';
 const demoUrl = project.data.demoUrl || '';
-const topicMap = await getTopicMap();
-const topicEntries = project.data.topics
-	.map((topic) => topicMap.get(topic))
-	.filter((topic): topic is CollectionEntry<'topics'> => Boolean(topic));
+const topicEntries = project.data.topicEntries;
 ---
 
 <!doctype html>
 <html lang="zh-CN">
 	<head>
-		<BaseHead title={`${project.data.title} — 项目 — ${SITE_TITLE}`} description={project.data.description} />
+		<BaseHead
+			title={`${project.data.title} · 项目 · ${settings.title}`}
+			description={project.data.description}
+			siteTitle={settings.title}
+			defaultOgImage={settings.defaultOgImage}
+		/>
 	</head>
 	<body>
 		<Effects />
-		<Header />
+		<Header siteTitle={settings.title} />
 		<main class="detail-main">
 			<article>
 				<p class="eyebrow reveal"><a href="/projects/">← 返回项目</a></p>
@@ -72,21 +74,18 @@ const topicEntries = project.data.topics
 				</header>
 
 				<div class="content reveal" data-pagefind-body>
-					<Content />
+					<Fragment set:html={html} />
 				</div>
 			</article>
 		</main>
-		<Footer />
+		<Footer siteTitle={settings.title} />
 	</body>
 </html>
 
 <style>
 	.detail-main { max-width: var(--container-narrow); }
 	.project-head { margin-bottom: 3rem; }
-	.title-row {
-		display: flex; align-items: flex-start; justify-content: space-between;
-		gap: 1.5rem;
-	}
+	.title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem; }
 	.title-row h1 { margin-bottom: 1rem; }
 	.lede { font-size: 1.12rem; color: rgb(var(--ink-soft)); }
 	.meta-row {
@@ -97,10 +96,7 @@ const topicEntries = project.data.topics
 		color: rgb(var(--muted));
 		text-transform: uppercase;
 	}
-	.topics {
-		display: flex; flex-wrap: wrap; gap: 0.45rem;
-		margin-top: 1.2rem;
-	}
+	.topics { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 1.2rem; }
 	.topics a {
 		display: inline-flex; align-items: center;
 		min-height: 26px; padding: 0.12rem 0.62rem;
@@ -134,7 +130,6 @@ const topicEntries = project.data.topics
 	.status-active .dot { background: rgb(var(--accent)); box-shadow: 0 0 8px rgba(var(--accent), 0.6); animation: pulse 2.4s ease-in-out infinite; }
 	.status-planned .dot { background: #ddb44d; }
 	.status-done .dot { background: #4f9f6f; }
-
 	.content {
 		font-size: 1.05rem;
 		border-top: 1px solid rgb(var(--line));
@@ -143,7 +138,7 @@ const topicEntries = project.data.topics
 	.content :global(h2) { margin-top: 2.4rem; font-size: 1.55rem; }
 	.content :global(h2:first-child) { margin-top: 0; }
 	.content :global(p), .content :global(li) { color: rgb(var(--ink-soft)); }
-	.content :global(ul) { padding-left: 1.2rem; }
+	.content :global(ul), .content :global(ol) { padding-left: 1.2rem; }
 	.content :global(a) {
 		color: rgb(var(--ink));
 		background-image: linear-gradient(rgb(var(--accent)), rgb(var(--accent)));
@@ -152,7 +147,10 @@ const topicEntries = project.data.topics
 		background-repeat: no-repeat;
 	}
 	.content :global(a:hover) { color: rgb(var(--accent)); }
-
+	.content :global(pre), .content :global(.table-scroll) { overflow-x: auto; }
+	.content :global(pre) { padding: 1rem; border-radius: var(--radius-sm); background: rgb(var(--bg-soft)); border: 1px solid rgb(var(--line)); }
+	.content :global(table) { width: 100%; border-collapse: collapse; }
+	.content :global(th), .content :global(td) { border: 1px solid rgb(var(--line)); padding: 0.55rem 0.7rem; }
 	@media (max-width: 720px) {
 		.title-row { flex-direction: column; gap: 0.4rem; }
 	}

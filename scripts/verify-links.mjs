@@ -3,7 +3,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const rootDir = process.cwd();
-const distDir = path.join(rootDir, 'dist');
+const distCandidates = [
+	path.join(rootDir, 'dist'),
+	path.join(rootDir, 'dist', 'client'),
+	path.join(rootDir, '.vercel', 'output', 'static'),
+];
+const distDir = distCandidates.find((candidate) => fs.existsSync(path.join(candidate, 'index.html'))) ?? distCandidates[0];
 const localOrigin = 'https://local.invalid';
 const siteOrigin = readSiteOrigin();
 

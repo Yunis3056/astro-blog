@@ -1,0 +1,8 @@
+---
+import {VisualEditing} from '@sanity/astro/visual-editing';
+import {hasPreviewSession} from '../lib/preview';
+
+const enabled = Astro.url.pathname.startsWith('/preview/') && hasPreviewSession(Astro.cookies);
+---
+
+<VisualEditing enabled={enabled} zIndex={1000} />

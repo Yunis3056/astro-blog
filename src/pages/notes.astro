@@ -1,25 +1,25 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Effects from '../components/Effects.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
-import { SITE_TITLE } from '../consts';
+import { getPublicNotes, getSiteSettings } from '../lib/content';
 
-const notes = (await getCollection('notes'))
-	.filter((note) => !note.data.draft)
-	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+export const prerender = true;
+
+const settings = await getSiteSettings();
+const notes = await getPublicNotes();
 ---
 
 <!doctype html>
 <html lang="zh-CN">
 	<head>
-		<BaseHead title={`笔记 — ${SITE_TITLE}`} description="Yunis 的短笔记和待办想法。" />
+		<BaseHead title={`笔记 · ${settings.title}`} description="Yunis 的短笔记和待办想法。" siteTitle={settings.title} defaultOgImage={settings.defaultOgImage} />
 	</head>
 	<body>
 		<Effects />
-		<Header />
+		<Header siteTitle={settings.title} />
 		<main>
 			<section class="hero">
 				<p class="eyebrow reveal">碎片</p>
@@ -45,7 +45,7 @@ const notes = (await getCollection('notes'))
 				</ul>
 			</section>
 		</main>
-		<Footer />
+		<Footer siteTitle={settings.title} />
 	</body>
 </html>
 
@@ -53,7 +53,6 @@ const notes = (await getCollection('notes'))
 	.hero { padding: 2rem 0 4rem; max-width: 720px; }
 	.hero h1 em { font-style: italic; color: rgb(var(--accent)); }
 	.lede { font-size: 1.05rem; color: rgb(var(--ink-soft)); }
-
 	.note-list {
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
@@ -67,24 +66,10 @@ const notes = (await getCollection('notes'))
 		min-height: 210px;
 		color: rgb(var(--ink));
 	}
-	.ix {
-		font-family: var(--font-mono);
-		font-size: 0.72rem; letter-spacing: 0.12em;
-		color: rgb(var(--accent));
-	}
-	.note h2 {
-		margin: 0.8rem 0 0.65rem;
-		font-size: 1.35rem;
-		transition: color 0.3s var(--ease);
-	}
+	.ix { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.12em; color: rgb(var(--accent)); }
+	.note h2 { margin: 0.8rem 0 0.65rem; font-size: 1.35rem; transition: color 0.3s var(--ease); }
 	.note:hover h2 { color: rgb(var(--accent)); }
-	.note p {
-		margin: 0;
-		font-family: var(--font-display);
-		font-size: 1.08rem; line-height: 1.55;
-		color: rgb(var(--ink));
-		flex: 1;
-	}
+	.note p { margin: 0; font-family: var(--font-display); font-size: 1.08rem; line-height: 1.55; color: rgb(var(--ink)); flex: 1; }
 	.meta {
 		display: flex; align-items: center; justify-content: space-between; gap: 1rem;
 		margin-top: 1.2rem;
@@ -92,7 +77,6 @@ const notes = (await getCollection('notes'))
 	}
 	.meta .arrow { display: inline-block; transition: transform 0.3s var(--ease); }
 	.note:hover .meta .arrow { transform: translateX(6px); }
-
 	@media (max-width: 720px) {
 		.note-list { grid-template-columns: 1fr; }
 		.meta { align-items: flex-start; flex-direction: column; gap: 0.4rem; }

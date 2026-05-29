@@ -1,41 +1,44 @@
 ---
-import { type CollectionEntry, getCollection, render } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Effects from '../../components/Effects.astro';
 import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
 import SearchMeta from '../../components/SearchMeta.astro';
-import { SITE_TITLE } from '../../consts';
-import { getSeriesMap, getTopicMap } from '../../lib/content';
+import { getPublicNotes, getSiteSettings, type NoteEntry } from '../../lib/content';
+import { portableTextToHtml } from '../../lib/sanity/portable-text';
+
+export const prerender = true;
 
 export async function getStaticPaths() {
-	const notes = (await getCollection('notes'))
-		.filter((note) => !note.data.draft)
-		.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+	const notes = await getPublicNotes();
 	return notes.map((note) => ({
 		params: { slug: note.id },
 		props: { note },
 	}));
 }
 
-const { note } = Astro.props as { note: CollectionEntry<'notes'> };
-const { Content } = await render(note);
-const [topicMap, seriesMap] = await Promise.all([getTopicMap(), getSeriesMap()]);
-const topicEntries = note.data.topics
-	.map((topic) => topicMap.get(topic))
-	.filter((topic): topic is CollectionEntry<'topics'> => Boolean(topic));
-const seriesEntry = note.data.series ? seriesMap.get(note.data.series.slug) ?? null : null;
+const { note } = Astro.props as { note: NoteEntry };
+const settings = await getSiteSettings();
+const html = portableTextToHtml(note.data.body);
+const topicEntries = note.data.topicEntries;
+const seriesEntry = note.data.seriesEntry;
 ---
 
 <!doctype html>
 <html lang="zh-CN">
 	<head>
-		<BaseHead title={`${note.data.title} — 笔记 — ${SITE_TITLE}`} description={note.data.description} />
+		<BaseHead
+			title={`${note.data.title} · 笔记 · ${settings.title}`}
+			description={note.data.description}
+			canonicalURL={note.data.canonicalURL}
+			siteTitle={settings.title}
+			defaultOgImage={settings.defaultOgImage}
+		/>
 	</head>
 	<body>
 		<Effects />
-		<Header />
+		<Header siteTitle={settings.title} />
 		<main class="detail-main">
 			<article>
 				<p class="eyebrow reveal"><a href="/notes/">← 返回笔记</a></p>
@@ -63,11 +66,11 @@ const seriesEntry = note.data.series ? seriesMap.get(note.data.series.slug) ?? n
 				</header>
 
 				<div class="content reveal" data-pagefind-body>
-					<Content />
+					<Fragment set:html={html} />
 				</div>
 			</article>
 		</main>
-		<Footer />
+		<Footer siteTitle={settings.title} />
 	</body>
 </html>
 
@@ -82,11 +85,7 @@ const seriesEntry = note.data.series ? seriesMap.get(note.data.series.slug) ?? n
 	}
 	.note-head h1 { margin-bottom: 1rem; }
 	.lede { font-size: 1.12rem; color: rgb(var(--ink-soft)); }
-	.tags {
-		display: flex; flex-wrap: wrap; gap: 0.4rem;
-		margin-top: 1.4rem;
-	}
-	.topics {
+	.tags, .topics {
 		display: flex; flex-wrap: wrap; gap: 0.45rem;
 		margin-top: 1.4rem;
 	}
@@ -117,7 +116,7 @@ const seriesEntry = note.data.series ? seriesMap.get(note.data.series.slug) ?? n
 	.content :global(h2) { margin-top: 2.4rem; font-size: 1.55rem; }
 	.content :global(h2:first-child) { margin-top: 0; }
 	.content :global(p), .content :global(li) { color: rgb(var(--ink-soft)); }
-	.content :global(ul) { padding-left: 1.2rem; }
+	.content :global(ul), .content :global(ol) { padding-left: 1.2rem; }
 	.content :global(a) {
 		color: rgb(var(--ink));
 		background-image: linear-gradient(rgb(var(--accent)), rgb(var(--accent)));
@@ -126,4 +125,8 @@ const seriesEntry = note.data.series ? seriesMap.get(note.data.series.slug) ?? n
 		background-repeat: no-repeat;
 	}
 	.content :global(a:hover) { color: rgb(var(--accent)); }
+	.content :global(pre), .content :global(.table-scroll) { overflow-x: auto; }
+	.content :global(pre) { padding: 1rem; border-radius: var(--radius-sm); background: rgb(var(--bg-soft)); border: 1px solid rgb(var(--line)); }
+	.content :global(table) { width: 100%; border-collapse: collapse; }
+	.content :global(th), .content :global(td) { border: 1px solid rgb(var(--line)); padding: 0.55rem 0.7rem; }
 </style>

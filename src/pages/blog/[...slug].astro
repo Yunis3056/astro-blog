@@ -1,46 +1,36 @@
 ---
-import { type CollectionEntry, getCollection, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
 import {
-	getSearchableEntries,
-	getSeriesMap,
-	getTopicMap,
-	relatedPostsFor,
 	entriesForSeries,
+	getPublicBlogPosts,
+	getSearchableEntries,
+	getSiteSettings,
+	relatedPostsFor,
+	type BlogEntry,
 } from '../../lib/content';
+import { headingsFromPortableText } from '../../lib/sanity/portable-text';
+
+export const prerender = true;
 
 export async function getStaticPaths() {
-	const posts = (await getCollection('blog'))
-		.filter((p) => !p.data.draft)
-		.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+	const posts = await getPublicBlogPosts();
 	return posts.map((post, i) => ({
 		params: { slug: post.id },
 		props: {
 			post,
-			prev: i + 1 < posts.length ? posts[i + 1] : null, // 更早的
-			next: i - 1 >= 0 ? posts[i - 1] : null,           // 更新的
+			prev: i + 1 < posts.length ? posts[i + 1] : null,
+			next: i - 1 >= 0 ? posts[i - 1] : null,
 		},
 	}));
 }
 
 const { post, prev, next } = Astro.props as {
-	post: CollectionEntry<'blog'>;
-	prev: CollectionEntry<'blog'> | null;
-	next: CollectionEntry<'blog'> | null;
+	post: BlogEntry;
+	prev: BlogEntry | null;
+	next: BlogEntry | null;
 };
-const { Content, headings } = await render(post);
-const [posts, entries, topicMap, seriesMap] = await Promise.all([
-	(await getCollection('blog'))
-		.filter((p) => !p.data.draft)
-		.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()),
-	getSearchableEntries(),
-	getTopicMap(),
-	getSeriesMap(),
-]);
-const topicEntries = post.data.topics
-	.map((topic) => topicMap.get(topic))
-	.filter((topic): topic is CollectionEntry<'topics'> => Boolean(topic));
-const seriesEntry = post.data.series ? seriesMap.get(post.data.series.slug) ?? null : null;
+const [posts, entries, siteSettings] = await Promise.all([getPublicBlogPosts(), getSearchableEntries(), getSiteSettings()]);
+const headings = headingsFromPortableText(post.data.body);
 const seriesItems = post.data.series ? entriesForSeries(entries, post.data.series.slug) : [];
 const relatedPosts = relatedPostsFor(post, posts);
 ---
@@ -49,13 +39,13 @@ const relatedPosts = relatedPostsFor(post, posts);
 	{...post.data}
 	slug={post.id}
 	headings={headings}
-	body={post.body ?? ''}
+	body={post.data.body}
+	bodyText={post.data.bodyText}
 	prev={prev}
 	next={next}
-	topicEntries={topicEntries}
-	seriesEntry={seriesEntry}
+	topicEntries={post.data.topicEntries}
+	seriesEntry={post.data.seriesEntry}
 	seriesItems={seriesItems}
 	relatedPosts={relatedPosts}
->
-	<Content />
-</BlogPost>
+	siteSettings={siteSettings}
+/>

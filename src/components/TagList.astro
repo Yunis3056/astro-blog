@@ -3,15 +3,15 @@ interface Props { tags: string[]; size?: 'sm' | 'md' | 'lg'; }
 const { tags, size = 'md' } = Astro.props;
 ---
 <ul class={`tag-list ${size}`}>
-	{tags.map((t) => {
+	{tags.map((tag) => {
 		return (
 			<li>
 				<a
-					href={`/tags/${encodeURIComponent(t)}/`}
+					href={`/tags/${encodeURIComponent(tag)}/`}
 					class="tag"
-					aria-label={`查看 ${t} 标签`}
+					aria-label={`查看 ${tag} 标签`}
 				>
-					<span class="name">{t}</span>
+					<span class="name">{tag}</span>
 				</a>
 			</li>
 		);

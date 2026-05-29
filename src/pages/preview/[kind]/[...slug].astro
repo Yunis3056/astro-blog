@@ -1,0 +1,266 @@
+---
+import BaseHead from '../../../components/BaseHead.astro';
+import Effects from '../../../components/Effects.astro';
+import Footer from '../../../components/Footer.astro';
+import FormattedDate from '../../../components/FormattedDate.astro';
+import Header from '../../../components/Header.astro';
+import SearchMeta from '../../../components/SearchMeta.astro';
+import BlogPost from '../../../layouts/BlogPost.astro';
+import {
+	entriesForSeries,
+	entriesForTopic,
+	getBlogPostBySlug,
+	getNoteBySlug,
+	getProjectBySlug,
+	getPublicBlogPosts,
+	getSearchableEntries,
+	getSeriesBySlug,
+	getSiteSettings,
+	getTopicBySlug,
+	labelForEntry,
+	hrefForEntry,
+	seriesForEntry,
+	type BlogEntry,
+	type NoteEntry,
+	type ProjectEntry,
+	type ProjectStatus,
+	type SearchableEntry,
+	type SeriesEntry,
+	type TopicEntry,
+} from '../../../lib/content';
+import { hasPreviewSession } from '../../../lib/preview';
+import { headingsFromPortableText, portableTextToHtml } from '../../../lib/sanity/portable-text';
+
+export const prerender = false;
+
+const statusLabels: Record<ProjectStatus, string> = {
+	active: '进行中',
+	planned: '规划中',
+	idle: '待启动',
+	done: '已完成',
+};
+
+const kind = Astro.params.kind;
+const slug = Astro.params.slug;
+const previewAuthorized = hasPreviewSession(Astro.cookies);
+const siteSettings = await getSiteSettings(previewAuthorized ? {draftMode: true} : {});
+
+let blogPost: BlogEntry | null = null;
+let blogPrev: BlogEntry | null = null;
+let blogNext: BlogEntry | null = null;
+let blogSeriesItems: SearchableEntry[] = [];
+let blogRelated: BlogEntry[] = [];
+
+let note: NoteEntry | null = null;
+let project: ProjectEntry | null = null;
+let topic: TopicEntry | null = null;
+let topicEntries: SearchableEntry[] = [];
+let series: SeriesEntry | null = null;
+let seriesEntries: SearchableEntry[] = [];
+
+if (!previewAuthorized) {
+	Astro.response.status = 401;
+} else if (!slug || !kind) {
+	Astro.response.status = 404;
+} else if (kind === 'blog') {
+	const posts = await getPublicBlogPosts({draftMode: true});
+	const entries = await getSearchableEntries({draftMode: true});
+	blogPost = await getBlogPostBySlug(slug, {draftMode: true});
+	if (blogPost) {
+		const index = posts.findIndex((item) => item.id === blogPost?.id);
+		blogPrev = index >= 0 && index + 1 < posts.length ? posts[index + 1] : null;
+		blogNext = index > 0 ? posts[index - 1] : null;
+		blogSeriesItems = blogPost.data.series ? entriesForSeries(entries, blogPost.data.series.slug) : [];
+		blogRelated = posts.filter((item) => item.id !== blogPost?.id).slice(0, 3);
+	}
+} else if (kind === 'notes') {
+	note = await getNoteBySlug(slug, {draftMode: true});
+} else if (kind === 'projects') {
+	project = await getProjectBySlug(slug, {draftMode: true});
+} else if (kind === 'topics') {
+	const entries = await getSearchableEntries({draftMode: true});
+	topic = await getTopicBySlug(slug, {draftMode: true});
+	topicEntries = topic ? entriesForTopic(entries, topic.id) : [];
+} else if (kind === 'series') {
+	const entries = await getSearchableEntries({draftMode: true});
+	series = await getSeriesBySlug(slug, {draftMode: true});
+	seriesEntries = series ? entriesForSeries(entries, series.id) : [];
+}
+
+if (previewAuthorized && !blogPost && !note && !project && !topic && !series) {
+	Astro.response.status = 404;
+}
+---
+
+{blogPost ? (
+	<BlogPost
+		{...blogPost.data}
+		slug={blogPost.id}
+		headings={headingsFromPortableText(blogPost.data.body)}
+		body={blogPost.data.body}
+		bodyText={blogPost.data.bodyText}
+		prev={blogPrev}
+		next={blogNext}
+		topicEntries={blogPost.data.topicEntries}
+		seriesEntry={blogPost.data.seriesEntry}
+		seriesItems={blogSeriesItems}
+		relatedPosts={blogRelated}
+		siteSettings={siteSettings}
+	/>
+) : (
+	<html lang="zh-CN">
+		<head>
+			<BaseHead
+				title={`${note?.data.title ?? project?.data.title ?? topic?.data.title ?? series?.data.title ?? '预览'} · ${siteSettings.title}`}
+				description={note?.data.description ?? project?.data.description ?? topic?.data.description ?? series?.data.description ?? '预览'}
+				siteTitle={siteSettings.title}
+				defaultOgImage={siteSettings.defaultOgImage}
+			/>
+		</head>
+		<body>
+			<Effects />
+			<Header siteTitle={siteSettings.title} />
+			<main class="detail-main">
+				{!previewAuthorized && (
+					<article>
+						<header class="detail-head reveal">
+							<h1>Preview requires access.</h1>
+							<p class="lede">Open this page from Sanity Studio or enable draft mode with a valid preview secret.</p>
+						</header>
+					</article>
+				)}
+
+				{note && (
+					<article>
+						<p class="eyebrow reveal"><a href={`/notes/${note.id}/`}>公开页面</a></p>
+						<header class="detail-head reveal">
+							<div class="date"><FormattedDate date={note.data.pubDate} /></div>
+							<h1 data-pagefind-ignore>{note.data.title}</h1>
+							<p class="lede">{note.data.description}</p>
+							<SearchMeta type="笔记" date={note.data.pubDate} topics={note.data.topicEntries.map((item) => item.data.title)} tags={note.data.tags} series={note.data.seriesEntry?.data.title} />
+						</header>
+						<div class="content reveal" data-pagefind-ignore>
+							<Fragment set:html={portableTextToHtml(note.data.body)} />
+						</div>
+					</article>
+				)}
+
+				{project && (
+					<article>
+						<p class="eyebrow reveal"><a href={`/projects/${project.id}/`}>公开页面</a></p>
+						<header class="detail-head reveal">
+							<div class="title-row">
+								<h1 data-pagefind-ignore>{project.data.title}</h1>
+								<span class={`status status-${project.data.status}`}><span class="dot"></span>{statusLabels[project.data.status]}</span>
+							</div>
+							<p class="lede">{project.data.description}</p>
+							<SearchMeta type="项目" topics={project.data.topicEntries.map((item) => item.data.title)} tags={project.data.stack} />
+						</header>
+						<div class="content reveal" data-pagefind-ignore>
+							<Fragment set:html={portableTextToHtml(project.data.body)} />
+						</div>
+					</article>
+				)}
+
+				{topic && (
+					<article>
+						<p class="eyebrow reveal"><a href={`/topics/${topic.id}/`}>公开页面</a></p>
+						<header class="detail-head reveal">
+							<h1>{topic.data.title}</h1>
+							<p class="lede">{topic.data.description}</p>
+						</header>
+						<section class="content-list">
+							{topicEntries.map((entry) => (
+								<a class="row" href={hrefForEntry(entry)}>
+									<span class="type">{labelForEntry(entry)}</span>
+									<div>
+										<h2>{entry.data.title}</h2>
+										<p>{entry.data.description}</p>
+									</div>
+								</a>
+							))}
+						</section>
+					</article>
+				)}
+
+				{series && (
+					<article>
+						<p class="eyebrow reveal"><a href={`/series/${series.id}/`}>公开页面</a></p>
+						<header class="detail-head reveal">
+							<h1>{series.data.title}</h1>
+							<p class="lede">{series.data.description}</p>
+						</header>
+						<section class="content-list">
+							{seriesEntries.map((entry) => (
+								<a class="row" href={hrefForEntry(entry)}>
+									<span class="type">{String(seriesForEntry(entry)?.order ?? 0).padStart(2, '0')}</span>
+									<div>
+										<h2>{entry.data.title}</h2>
+										<p>{entry.data.description}</p>
+									</div>
+								</a>
+							))}
+						</section>
+					</article>
+				)}
+			</main>
+			<Footer siteTitle={siteSettings.title} />
+		</body>
+	</html>
+)}
+
+<style>
+	.detail-main { max-width: var(--container-narrow); }
+	.detail-head { margin-bottom: 3rem; }
+	.date {
+		margin-bottom: 1rem;
+		font-family: var(--font-mono);
+		font-size: 0.78rem; letter-spacing: 0.08em;
+		color: rgb(var(--muted));
+	}
+	.lede { font-size: 1.12rem; color: rgb(var(--ink-soft)); }
+	.title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem; }
+	.status {
+		display: inline-flex; align-items: center; gap: 0.45rem;
+		padding: 0.3rem 0.7rem;
+		font-size: 0.75rem; font-weight: 500; letter-spacing: 0.04em;
+		border-radius: 999px;
+		border: 1px solid rgb(var(--line));
+		background: rgba(var(--bg-soft), 0.8);
+		color: rgb(var(--ink-soft));
+		white-space: nowrap;
+	}
+	.status .dot { width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--muted)); }
+	.status-active .dot { background: rgb(var(--accent)); }
+	.status-planned .dot { background: #ddb44d; }
+	.status-done .dot { background: #4f9f6f; }
+	.content {
+		font-size: 1.05rem;
+		border-top: 1px solid rgb(var(--line));
+		padding-top: 2rem;
+	}
+	.content :global(h2) { margin-top: 2.4rem; font-size: 1.55rem; }
+	.content :global(p), .content :global(li) { color: rgb(var(--ink-soft)); }
+	.content :global(pre), .content :global(.table-scroll) { overflow-x: auto; }
+	.content :global(pre) { padding: 1rem; border-radius: var(--radius-sm); background: rgb(var(--bg-soft)); border: 1px solid rgb(var(--line)); }
+	.content :global(table) { width: 100%; border-collapse: collapse; }
+	.content :global(th), .content :global(td) { border: 1px solid rgb(var(--line)); padding: 0.55rem 0.7rem; }
+	.content-list { display: flex; flex-direction: column; border-top: 1px solid rgb(var(--line)); }
+	.row {
+		display: grid;
+		grid-template-columns: 90px minmax(0, 1fr);
+		gap: 1.2rem;
+		align-items: center;
+		padding: 1.25rem 0.4rem;
+		border-bottom: 1px solid rgb(var(--line));
+		color: rgb(var(--ink));
+	}
+	.row:hover h2 { color: rgb(var(--accent)); }
+	.type { font-family: var(--font-mono); font-size: 0.74rem; color: rgb(var(--muted)); }
+	.row h2 { margin: 0 0 0.35rem; font-size: 1.25rem; transition: color 0.3s var(--ease); }
+	.row p { margin: 0; font-size: 0.9rem; color: rgb(var(--ink-soft)); }
+	@media (max-width: 720px) {
+		.row { grid-template-columns: 1fr; gap: 0.45rem; }
+		.title-row { flex-direction: column; }
+	}
+</style>

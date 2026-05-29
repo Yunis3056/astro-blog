@@ -1,65 +1,65 @@
-import { getCollection } from 'astro:content';
-import { getImage } from 'astro:assets';
 import rss from '@astrojs/rss';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
-import MarkdownIt from 'markdown-it';
 import sanitizeHtml from 'sanitize-html';
+import { getPublicBlogPosts, getSiteSettings } from '../lib/content';
+import { portableTextToHtml } from '../lib/sanity/portable-text';
+import { sanityImageUrl } from '../lib/sanity/image';
 
-const parser = new MarkdownIt({ html: true, linkify: true });
-
-function isMdxBody(body = '', filePath = '') {
-	return filePath.endsWith('.mdx')
-		|| /^\s*import\s.+from\s+['"].+['"];?/m.test(body)
-		|| /<[A-Z][A-Za-z0-9]*(\s|>|\/>)/.test(body);
-}
+export const prerender = true;
 
 function renderRssContent(post) {
-	const body = post.body ?? '';
-	const rawHtml = isMdxBody(body, post.filePath ?? '')
-		? `<p>${post.data.description}</p>`
-		: parser.render(body);
-
-	return sanitizeHtml(rawHtml, {
-		allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'figure', 'figcaption']),
-		allowedAttributes: { ...sanitizeHtml.defaults.allowedAttributes, img: ['src', 'alt', 'title'] },
+	return sanitizeHtml(portableTextToHtml(post.data.body), {
+		allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+			'img',
+			'figure',
+			'figcaption',
+			'pre',
+			'code',
+			'table',
+			'tbody',
+			'tr',
+			'th',
+			'td',
+		]),
+		allowedAttributes: {
+			...sanitizeHtml.defaults.allowedAttributes,
+			a: ['href', 'target', 'rel'],
+			img: ['src', 'alt', 'title', 'loading', 'decoding'],
+			code: ['class'],
+		},
 	});
 }
 
-async function coverUrl(post, site) {
+function coverUrl(post) {
 	if (!post.data.heroImage) return null;
-	const image = await getImage({
-		src: post.data.heroImage,
-		width: 1200,
-		height: 630,
-		format: 'jpg',
-	});
-	return new URL(image.src, site).toString();
+	return sanityImageUrl(post.data.heroImage, {width: 1200, height: 630, quality: 82});
+}
+
+function xmlAttribute(value) {
+	return String(value)
+		.replaceAll('&', '&amp;')
+		.replaceAll('"', '&quot;')
+		.replaceAll('<', '&lt;')
+		.replaceAll('>', '&gt;');
 }
 
 export async function GET(context) {
-	const posts = (await getCollection('blog'))
-		.filter((p) => !p.data.draft)
-		.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
-
-	const items = await Promise.all(posts.map(async (post) => {
-		const cover = await coverUrl(post, context.site);
-		const html = renderRssContent(post);
+	const [posts, settings] = await Promise.all([getPublicBlogPosts(), getSiteSettings()]);
+	const items = posts.map((post) => {
+		const cover = coverUrl(post);
 		return {
 			title: post.data.title,
 			description: post.data.description,
 			pubDate: post.data.pubDate,
 			link: `/blog/${post.id}/`,
 			categories: post.data.tags ?? [],
-			content: html,
-			customData: cover
-				? `<media:content url="${cover}" medium="image" />`
-				: undefined,
+			content: renderRssContent(post),
+			customData: cover ? `<media:content url="${xmlAttribute(cover)}" medium="image" />` : undefined,
 		};
-	}));
+	});
 
 	return rss({
-		title: SITE_TITLE,
-		description: SITE_DESCRIPTION,
+		title: settings.title,
+		description: settings.description,
 		site: context.site,
 		xmlns: { media: 'http://search.yahoo.com/mrss/' },
 		items,

@@ -1,25 +1,28 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Effects from '../components/Effects.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import {
 	entriesForSeries,
+	getSanitySetupIssue,
+	getPublicBlogPosts,
 	getPublicSeries,
 	getPublicTopics,
 	getSearchableEntries,
+	getSiteSettings,
 	hrefForEntry,
 	labelForEntry,
 	topicUsage,
 } from '../lib/content';
+import {hasSanityConfig} from '../lib/sanity/config';
 
-const latestPosts = (await getCollection('blog'))
-	.filter((post) => !post.data.draft)
-	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
-	.slice(0, 3);
+export const prerender = true;
+
+const sanityConfigured = hasSanityConfig();
+const settings = await getSiteSettings();
+const latestPosts = (await getPublicBlogPosts()).slice(0, 3);
 const [topics, series, entries] = await Promise.all([
 	getPublicTopics(),
 	getPublicSeries(),
@@ -29,26 +32,26 @@ const usage = topicUsage(entries);
 const featuredEntries = entries.filter((entry) => entry.data.featured).slice(0, 4);
 const featuredTopics = topics.filter((topic) => topic.data.featured).slice(0, 4);
 const featuredSeries = series.filter((item) => item.data.featured).slice(0, 2);
-
+const sanitySetupIssue = getSanitySetupIssue();
 ---
 
 <!doctype html>
 <html lang="zh-CN">
 	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+		<BaseHead title={settings.title} description={settings.description} siteTitle={settings.title} defaultOgImage={settings.defaultOgImage} />
 	</head>
 	<body>
 		<Effects />
-		<Header />
+		<Header siteTitle={settings.title} />
 		<main>
 			<section class="hero">
-				<p class="eyebrow reveal">个人空间 · 自 2025</p>
+				<p class="eyebrow reveal">在线写作 · 知识系统</p>
 				<h1 class="reveal" style="--reveal-delay: 100ms">
 					把经验写成<br>
-					可回到的<em>系统</em>。
+					可持续迭代的<em>内容平台</em>。
 				</h1>
 				<p class="lede reveal" style="--reveal-delay: 220ms">
-					{SITE_DESCRIPTION} 4.0 把文章、笔记和项目串成专题与系列，让旧内容能被重新找到、继续阅读和持续更新。
+					{settings.description} 5.0 使用 Sanity 在线写作、预览和发布，让文章、笔记、项目、专题和系列都能在后台持续维护。
 				</p>
 				<div class="actions reveal" style="--reveal-delay: 340ms">
 					<a href="/topics" class="btn">
@@ -62,6 +65,12 @@ const featuredSeries = series.filter((item) => item.data.featured).slice(0, 2);
 					<span><strong>{series.length}</strong> 条系列</span>
 					<span><strong>{entries.length}</strong> 个内容节点</span>
 				</div>
+				{(!sanityConfigured || sanitySetupIssue) && (
+					<div class="setup-notice reveal" style="--reveal-delay: 500ms">
+						<strong>{sanityConfigured ? 'Sanity dataset 尚未就绪' : '本地 Sanity 尚未配置'}</strong>
+						<span>{sanitySetupIssue || '设置 PUBLIC_SANITY_PROJECT_ID 和 PUBLIC_SANITY_DATASET 后即可读取后台内容。'} 生产构建仍会强制校验 Sanity。</span>
+					</div>
+				)}
 				<div class="scroll-hint" aria-hidden="true">
 					<span>SCROLL</span>
 					<span class="line"></span>
@@ -148,9 +157,8 @@ const featuredSeries = series.filter((item) => item.data.featured).slice(0, 2);
 					))}
 				</div>
 			</section>
-
 		</main>
-		<Footer />
+		<Footer siteTitle={settings.title} />
 	</body>
 </html>
 
@@ -161,11 +169,7 @@ const featuredSeries = series.filter((item) => item.data.featured).slice(0, 2);
 		padding: 4rem 0 6rem;
 		position: relative;
 	}
-	.hero h1 em {
-		font-style: italic;
-		color: rgb(var(--accent));
-		position: relative;
-	}
+	.hero h1 em { font-style: italic; color: rgb(var(--accent)); position: relative; }
 	.lede {
 		max-width: 620px;
 		font-size: 1.1rem;
@@ -181,9 +185,25 @@ const featuredSeries = series.filter((item) => item.data.featured).slice(0, 2);
 		color: rgb(var(--muted));
 		font-size: 0.85rem;
 	}
-	.stats strong {
+	.stats strong { font-family: var(--font-mono); color: rgb(var(--ink)); }
+	.setup-notice {
+		max-width: 680px;
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		margin-top: 1.4rem;
+		padding: 1rem 1.1rem;
+		border: 1px solid rgba(var(--accent), 0.28);
+		border-radius: var(--radius-sm);
+		background: rgba(var(--accent), 0.08);
+		color: rgb(var(--ink-soft));
+		font-size: 0.92rem;
+	}
+	.setup-notice strong { color: rgb(var(--ink)); }
+	.setup-notice code {
 		font-family: var(--font-mono);
-		color: rgb(var(--ink));
+		font-size: 0.82em;
+		color: rgb(var(--accent));
 	}
 
 	.scroll-hint {
@@ -226,32 +246,20 @@ const featuredSeries = series.filter((item) => item.data.featured).slice(0, 2);
 		color: rgb(var(--ink));
 	}
 	.series-card { min-height: 210px; }
-	.post-card .num {
-		font-family: var(--font-mono);
-		font-size: 0.72rem; color: rgb(var(--muted));
-		letter-spacing: 0.1em;
-	}
+	.post-card .num,
 	.topic-card .num {
 		font-family: var(--font-mono);
 		font-size: 0.72rem;
-		color: rgb(var(--accent));
 		letter-spacing: 0.1em;
 	}
+	.post-card .num { color: rgb(var(--muted)); }
+	.topic-card .num { color: rgb(var(--accent)); }
 	.post-meta { font-size: 0.8rem; color: rgb(var(--muted)); margin-top: 1.5rem; }
-	.post-title {
-		margin: 0.6rem 0 0.8rem;
-		font-size: 1.35rem; line-height: 1.25;
-	}
+	.post-title { margin: 0.6rem 0 0.8rem; font-size: 1.35rem; line-height: 1.25; }
 	.topic-card h3,
-	.series-card h3 {
-		margin: 1rem 0 0.65rem;
-		font-size: 1.28rem;
-	}
+	.series-card h3 { margin: 1rem 0 0.65rem; font-size: 1.28rem; }
 	.series-card h3 { margin-top: 0; }
-	.post-desc {
-		font-size: 0.92rem; color: rgb(var(--ink-soft));
-		line-height: 1.65; margin: 0; flex: 1;
-	}
+	.post-desc,
 	.topic-card p,
 	.series-card p {
 		font-size: 0.9rem;
@@ -271,11 +279,7 @@ const featuredSeries = series.filter((item) => item.data.featured).slice(0, 2);
 	.feature-row:hover .row-arrow { transform: translateX(6px); }
 	.read .arrow, .row-arrow { display: inline-block; transition: transform 0.4s var(--ease); }
 
-	.feature-list {
-		display: flex;
-		flex-direction: column;
-		border-top: 1px solid rgb(var(--line));
-	}
+	.feature-list { display: flex; flex-direction: column; border-top: 1px solid rgb(var(--line)); }
 	.feature-row {
 		display: grid;
 		grid-template-columns: 90px minmax(0, 1fr) 32px;
@@ -285,16 +289,8 @@ const featuredSeries = series.filter((item) => item.data.featured).slice(0, 2);
 		border-bottom: 1px solid rgb(var(--line));
 		color: rgb(var(--ink));
 	}
-	.feature-row .type {
-		font-family: var(--font-mono);
-		font-size: 0.72rem;
-		color: rgb(var(--muted));
-	}
-	.feature-row h3 {
-		margin: 0 0 0.35rem;
-		font-size: 1.2rem;
-		transition: color 0.3s var(--ease);
-	}
+	.feature-row .type { font-family: var(--font-mono); font-size: 0.72rem; color: rgb(var(--muted)); }
+	.feature-row h3 { margin: 0 0 0.35rem; font-size: 1.2rem; transition: color 0.3s var(--ease); }
 	.feature-row:hover h3 { color: rgb(var(--accent)); }
 	.feature-row p { margin: 0; font-size: 0.9rem; color: rgb(var(--ink-soft)); }
 	.row-arrow { color: rgb(var(--muted)); text-align: right; }

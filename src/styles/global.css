@@ -97,14 +97,14 @@ body {
 h1, h2, h3, h4 {
 	font-family: var(--font-display);
 	font-weight: 500;
-	letter-spacing: -0.02em;
+	letter-spacing: 0;
 	line-height: 1.1;
 	color: rgb(var(--ink));
 	margin: 0 0 0.6em;
 }
-h1 { font-size: clamp(2.4rem, 5.5vw, 4.5rem); letter-spacing: -0.035em; }
+h1 { font-size: clamp(2.4rem, 5.5vw, 4.5rem); letter-spacing: 0; }
 h2 { font-size: clamp(1.7rem, 3vw, 2.4rem); }
-h3 { font-size: 1.25rem; letter-spacing: -0.01em; }
+h3 { font-size: 1.25rem; letter-spacing: 0; }
 p  { margin: 0 0 1.1em; color: rgb(var(--ink-soft)); }
 small, .meta { color: rgb(var(--muted)); font-size: 0.85rem; letter-spacing: 0.04em; }
 

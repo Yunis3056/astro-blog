@@ -11,7 +11,7 @@ const { type, date, topics = [], tags = [], series } = Astro.props;
 const sortDate = date ? new Date(date).toISOString().slice(0, 10) : '1970-01-01';
 ---
 
-<div class="sr-only" data-pagefind-ignore>
+<div class="sr-only">
 	<span data-pagefind-filter="type">{type}</span>
 	<span data-pagefind-meta="type">{type}</span>
 	<time data-pagefind-sort="date" datetime={sortDate}>{sortDate}</time>

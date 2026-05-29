@@ -3,9 +3,11 @@ import BaseHead from '../../components/BaseHead.astro';
 import Effects from '../../components/Effects.astro';
 import Footer from '../../components/Footer.astro';
 import Header from '../../components/Header.astro';
-import { SITE_TITLE } from '../../consts';
-import { getPublicTopics, getSearchableEntries, topicUsage } from '../../lib/content';
+import { getPublicTopics, getSearchableEntries, getSiteSettings, topicUsage } from '../../lib/content';
 
+export const prerender = true;
+
+const settings = await getSiteSettings();
 const topics = await getPublicTopics();
 const entries = await getSearchableEntries();
 const counts = topicUsage(entries);
@@ -14,11 +16,11 @@ const counts = topicUsage(entries);
 <!doctype html>
 <html lang="zh-CN">
 	<head>
-		<BaseHead title={`专题 — ${SITE_TITLE}`} description="按高层主题组织博客、笔记和项目。" />
+		<BaseHead title={`专题 · ${settings.title}`} description="按高层主题组织博客、笔记和项目。" siteTitle={settings.title} defaultOgImage={settings.defaultOgImage} />
 	</head>
 	<body>
 		<Effects />
-		<Header />
+		<Header siteTitle={settings.title} />
 		<main>
 			<section class="hero">
 				<p class="eyebrow reveal">知识入口</p>
@@ -37,7 +39,7 @@ const counts = topicUsage(entries);
 				))}
 			</section>
 		</main>
-		<Footer />
+		<Footer siteTitle={settings.title} />
 	</body>
 </html>
 
@@ -45,11 +47,7 @@ const counts = topicUsage(entries);
 	.hero { padding: 2rem 0 4rem; max-width: 760px; }
 	.hero h1 em { font-style: italic; color: rgb(var(--accent)); }
 	.lede { font-size: 1.05rem; color: rgb(var(--ink-soft)); }
-	.topic-grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 1.25rem;
-	}
+	.topic-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
 	.topic {
 		display: flex;
 		flex-direction: column;

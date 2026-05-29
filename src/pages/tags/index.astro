@@ -1,30 +1,32 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Effects from '../../components/Effects.astro';
 import Footer from '../../components/Footer.astro';
 import Header from '../../components/Header.astro';
 import TagList from '../../components/TagList.astro';
-import { SITE_TITLE } from '../../consts';
+import { getPublicBlogPosts, getSiteSettings, tagUsage } from '../../lib/content';
 
-const posts = (await getCollection('blog')).filter((p) => !p.data.draft);
-const counts = new Map<string, number>();
-posts.forEach((p) => p.data.tags?.forEach((t) => counts.set(t, (counts.get(t) || 0) + 1)));
-const tags = Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-const tagNames = tags.map(([t]) => t);
+export const prerender = true;
+
+const settings = await getSiteSettings();
+const posts = await getPublicBlogPosts();
+const tags = Array.from(tagUsage(posts).entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-CN'));
+const tagNames = tags.map(([tag]) => tag);
 ---
 <!doctype html>
 <html lang="zh-CN">
-	<head><BaseHead title={`标签 — ${SITE_TITLE}`} description="按标签浏览所有文章。" /></head>
+	<head>
+		<BaseHead title={`标签 · ${settings.title}`} description="按标签浏览所有文章。" siteTitle={settings.title} defaultOgImage={settings.defaultOgImage} />
+	</head>
 	<body>
 		<Effects />
-		<Header />
+		<Header siteTitle={settings.title} />
 		<main>
 			<section class="hero">
 				<p class="eyebrow reveal">索引</p>
 				<h1 class="reveal" style="--reveal-delay: 100ms">标签<em>云</em></h1>
 				<p class="lede reveal" style="--reveal-delay: 200ms">
-					按主题翻找文章。
+					按细粒度关键词翻找文章。
 				</p>
 			</section>
 
@@ -32,7 +34,7 @@ const tagNames = tags.map(([t]) => t);
 				<TagList tags={tagNames} size="lg" />
 			</section>
 		</main>
-		<Footer />
+		<Footer siteTitle={settings.title} />
 	</body>
 </html>
 
@@ -40,8 +42,5 @@ const tagNames = tags.map(([t]) => t);
 	.hero { padding: 2rem 0 3rem; max-width: 720px; }
 	.hero h1 em { font-style: italic; color: rgb(var(--accent)); }
 	.lede { font-size: 1.05rem; color: rgb(var(--ink-soft)); }
-	.cloud {
-		margin-top: 1rem;
-		max-width: 980px;
-	}
+	.cloud { margin-top: 1rem; max-width: 980px; }
 </style>

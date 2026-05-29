@@ -1,6 +1,5 @@
 ---
-import { Image } from 'astro:assets';
-import type { CollectionEntry } from 'astro:content';
+import type {PortableTextBlock} from '@portabletext/types';
 import BaseHead from '../components/BaseHead.astro';
 import Comments from '../components/Comments.astro';
 import Effects from '../components/Effects.astro';
@@ -9,20 +8,22 @@ import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import SearchMeta from '../components/SearchMeta.astro';
 import TagList from '../components/TagList.astro';
-import { hrefForEntry, labelForEntry, type SearchableEntry } from '../lib/content';
+import { hrefForEntry, labelForEntry, type BlogEntry, type SearchableEntry, type SeriesEntry, type SiteSettings, type TopicEntry } from '../lib/content';
+import { sanityImageAlt, sanityImageUrl } from '../lib/sanity/image';
+import { portableTextToHtml, type Heading } from '../lib/sanity/portable-text';
 
-interface Heading { depth: number; slug: string; text: string; }
-
-type Props = CollectionEntry<'blog'>['data'] & {
-	slug?: string;
+type Props = BlogEntry['data'] & {
+	slug: string;
 	headings?: Heading[];
-	body?: string;
-	prev?: CollectionEntry<'blog'> | null;
-	next?: CollectionEntry<'blog'> | null;
-	topicEntries?: CollectionEntry<'topics'>[];
-	seriesEntry?: CollectionEntry<'series'> | null;
+	prev?: BlogEntry | null;
+	next?: BlogEntry | null;
+	topicEntries?: TopicEntry[];
+	seriesEntry?: SeriesEntry | null;
 	seriesItems?: SearchableEntry[];
-	relatedPosts?: CollectionEntry<'blog'>[];
+	relatedPosts?: BlogEntry[];
+	body?: PortableTextBlock[];
+	bodyText?: string;
+	siteSettings?: SiteSettings;
 };
 
 const {
@@ -33,37 +34,45 @@ const {
 	heroImage,
 	tags = [],
 	canonicalURL,
-	slug = Astro.params.slug || '',
+	slug,
 	headings = [],
-	body = '',
+	body = [],
+	bodyText = '',
 	prev = null,
 	next = null,
 	topicEntries = [],
 	seriesEntry = null,
 	seriesItems = [],
 	relatedPosts = [],
+	siteSettings,
 } = Astro.props;
 
-// 只取 h2 / h3
+const html = portableTextToHtml(body);
 const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
-
-// 阅读时长：中文按字符计，英文按词计，约 350 字符/分钟
-const cn = (body.match(/[一-龥]/g) || []).length;
-const en = (body.replace(/[一-龥]/g, ' ').trim().split(/\s+/).filter(Boolean)).length;
+const cn = (bodyText.match(/[\u4e00-\u9fff]/g) || []).length;
+const en = bodyText.replace(/[\u4e00-\u9fff]/g, ' ').trim().split(/\s+/).filter(Boolean).length;
 const readingMin = Math.max(1, Math.round(cn / 350 + en / 220));
 const currentHref = `/blog/${slug}/`;
 const seriesIndex = seriesItems.findIndex((item) => hrefForEntry(item) === currentHref);
 const topicNames = topicEntries.map((topic) => topic.data.title);
+const heroSrc = heroImage ? sanityImageUrl(heroImage, {width: 1280, height: 640, quality: 82}) : '';
 ---
 
 <html lang="zh-CN">
 	<head>
-		<BaseHead title={title} description={description} ogImage={`/og/${slug}.png`} canonicalURL={canonicalURL} />
+		<BaseHead
+			title={title}
+			description={description}
+			ogImage={`/og/${slug}.png`}
+			canonicalURL={canonicalURL}
+			siteTitle={siteSettings?.title}
+			defaultOgImage={siteSettings?.defaultOgImage}
+		/>
 	</head>
 	<body>
 		<div class="progress-bar" id="progressBar" aria-hidden="true"></div>
 		<Effects />
-		<Header />
+		<Header siteTitle={siteSettings?.title} />
 		<main class="post-main">
 			<article class="post-grid">
 				<div class="post-body">
@@ -85,10 +94,11 @@ const topicNames = topicEntries.map((topic) => topic.data.title);
 						{tags.length > 0 && <div class="post-tags"><TagList tags={tags} /></div>}
 					</div>
 
-					{heroImage && (
-						<div class="hero-image reveal">
-							<Image width={1280} height={640} src={heroImage} alt="" />
-						</div>
+					{heroSrc && (
+						<figure class="hero-image reveal">
+							<img width="1280" height="640" src={heroSrc} alt={sanityImageAlt(heroImage, title)} loading="eager" decoding="async" />
+							{heroImage?.caption && <figcaption>{heroImage.caption}</figcaption>}
+						</figure>
 					)}
 
 					{seriesEntry && seriesItems.length > 0 && (
@@ -113,7 +123,7 @@ const topicNames = topicEntries.map((topic) => topic.data.title);
 					)}
 
 					<div class="prose reveal" id="postProse" data-pagefind-body>
-						<slot />
+						<Fragment set:html={html} />
 					</div>
 
 					{relatedPosts.length > 0 && (
@@ -172,11 +182,10 @@ const topicNames = topicEntries.map((topic) => topic.data.title);
 				)}
 			</article>
 		</main>
-		<Footer />
+		<Footer siteTitle={siteSettings?.title} />
 
 		<script is:inline>
 			function __postInit(){
-				// reading progress bar
 				if (window.__postScrollHandler) {
 					removeEventListener('scroll', window.__postScrollHandler);
 				}
@@ -192,7 +201,6 @@ const topicNames = topicEntries.map((topic) => topic.data.title);
 				addEventListener('scroll', onScroll, { passive: true });
 				onScroll();
 
-				// TOC: scroll-spy + smooth click
 				if (window.__postTocObserver) {
 					window.__postTocObserver.disconnect();
 				}
@@ -218,7 +226,6 @@ const topicNames = topicEntries.map((topic) => topic.data.title);
 
 				if ('IntersectionObserver' in window) {
 					const io = new IntersectionObserver((entries) => {
-						// 选最靠上的相交标题
 						const visible = entries.filter((e) => e.isIntersecting)
 							.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
 						if (visible[0]) {
@@ -230,7 +237,6 @@ const topicNames = topicEntries.map((topic) => topic.data.title);
 					window.__postTocObserver = io;
 				}
 
-				// 平滑跳转 + URL 同步
 				links.forEach((a) => {
 					a.addEventListener('click', (e) => {
 						const id = a.getAttribute('data-toc-link');
@@ -258,7 +264,6 @@ const topicNames = topicEntries.map((topic) => topic.data.title);
 			}
 
 			.post-main { max-width: var(--container); padding-top: 4rem; }
-
 			.post-grid {
 				display: grid;
 				grid-template-columns: minmax(0, 1fr) 240px;
@@ -271,11 +276,12 @@ const topicNames = topicEntries.map((topic) => topic.data.title);
 				display: flex; align-items: center; gap: 0.7rem;
 				font-size: 0.85rem; color: rgb(var(--muted));
 				letter-spacing: 0.05em; margin-bottom: 1.2rem;
+				flex-wrap: wrap;
 			}
 			.sep { opacity: 0.5; }
 			.post-title {
 				font-size: clamp(2rem, 4.5vw, 3.4rem);
-				line-height: 1.1; letter-spacing: -0.03em;
+				line-height: 1.1; letter-spacing: 0;
 				margin: 0 0 1rem;
 			}
 			.post-desc {
@@ -311,18 +317,25 @@ const topicNames = topicEntries.map((topic) => topic.data.title);
 				border-radius: var(--radius);
 				border: 1px solid rgb(var(--line));
 			}
-			.hero-image :global(img) {
+			.hero-image img {
 				display: block; width: 100%; height: auto;
 				transition: transform 1s var(--ease-out);
 			}
-			.hero-image:hover :global(img) { transform: scale(1.02); }
+			.hero-image:hover img { transform: scale(1.02); }
+			.hero-image figcaption {
+				padding: 0.65rem 0.8rem;
+				font-size: 0.78rem;
+				color: rgb(var(--muted));
+				border-top: 1px solid rgb(var(--line));
+			}
 
 			.prose { font-size: 1.05rem; scroll-margin-top: 80px; }
 			.prose :global(h2),
 			.prose :global(h3) { scroll-margin-top: 80px; }
 			.prose :global(h2) { margin-top: 2.5rem; font-size: 1.6rem; }
 			.prose :global(h3) { margin-top: 2rem; }
-			.prose :global(p) { color: rgb(var(--ink-soft)); }
+			.prose :global(p),
+			.prose :global(li) { color: rgb(var(--ink-soft)); }
 			.prose :global(a) {
 				color: rgb(var(--ink));
 				background-image: linear-gradient(rgb(var(--accent)), rgb(var(--accent)));
@@ -331,6 +344,16 @@ const topicNames = topicEntries.map((topic) => topic.data.title);
 				transition: background-size 0.4s var(--ease);
 			}
 			.prose :global(a:hover) { background-size: 100% 100%; color: rgb(var(--bg)); }
+			.prose :global(figure) { margin: 2rem 0; }
+			.prose :global(figcaption) { margin-top: 0.55rem; color: rgb(var(--muted)); font-size: 0.82rem; }
+			.prose :global(img) { max-width: 100%; border-radius: var(--radius-sm); border: 1px solid rgb(var(--line)); }
+			.prose :global(pre) { overflow-x: auto; padding: 1rem; border-radius: var(--radius-sm); background: rgb(var(--bg-soft)); border: 1px solid rgb(var(--line)); }
+			.prose :global(code) { font-family: var(--font-mono); }
+			.prose :global(.table-scroll) { overflow-x: auto; margin: 2rem 0; }
+			.prose :global(table) { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+			.prose :global(th),
+			.prose :global(td) { border: 1px solid rgb(var(--line)); padding: 0.6rem 0.75rem; text-align: left; }
+			.prose :global(th) { background: rgba(var(--bg-soft), 0.8); color: rgb(var(--ink)); }
 
 			.updated { font-style: italic; color: rgb(var(--muted)); }
 			.series-panel {
@@ -347,10 +370,7 @@ const topicNames = topicEntries.map((topic) => topic.data.title);
 				letter-spacing: 0;
 			}
 			.series-head p { margin: 0 0 1rem; font-size: 0.92rem; }
-			.eyebrow.small {
-				margin-bottom: 0.6rem;
-				font-size: 0.68rem;
-			}
+			.eyebrow.small { margin-bottom: 0.6rem; font-size: 0.68rem; }
 			.series-panel ol {
 				list-style: none;
 				display: grid;
@@ -368,33 +388,16 @@ const topicNames = topicEntries.map((topic) => topic.data.title);
 				color: rgb(var(--ink));
 			}
 			.series-panel li.active a,
-			.series-panel a:hover {
-				background: rgba(var(--accent), 0.1);
-			}
-			.series-panel span {
-				font-family: var(--font-mono);
-				font-size: 0.72rem;
-				color: rgb(var(--muted));
-			}
-			.series-panel strong {
-				font-size: 0.95rem;
-				line-height: 1.35;
-			}
-			.series-panel em {
-				font-style: normal;
-				font-size: 0.72rem;
-				color: rgb(var(--muted));
-			}
+			.series-panel a:hover { background: rgba(var(--accent), 0.1); }
+			.series-panel span { font-family: var(--font-mono); font-size: 0.72rem; color: rgb(var(--muted)); }
+			.series-panel strong { font-size: 0.95rem; line-height: 1.35; }
+			.series-panel em { font-style: normal; font-size: 0.72rem; color: rgb(var(--muted)); }
 			.related-posts {
 				margin: 4rem 0 0;
 				padding-top: 2.5rem;
 				border-top: 1px solid rgb(var(--line));
 			}
-			.related-grid {
-				display: grid;
-				grid-template-columns: repeat(3, 1fr);
-				gap: 0.8rem;
-			}
+			.related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; }
 			.related-card {
 				display: flex;
 				flex-direction: column;
@@ -406,20 +409,9 @@ const topicNames = topicEntries.map((topic) => topic.data.title);
 				background: rgba(var(--bg-soft), 0.5);
 			}
 			.related-card:hover { border-color: rgba(var(--accent), 0.45); }
-			.related-card span {
-				font-family: var(--font-mono);
-				font-size: 0.7rem;
-				color: rgb(var(--muted));
-			}
-			.related-card strong {
-				line-height: 1.35;
-			}
-			.related-card p {
-				margin: 0;
-				font-size: 0.82rem;
-				line-height: 1.55;
-				color: rgb(var(--ink-soft));
-			}
+			.related-card span { font-family: var(--font-mono); font-size: 0.7rem; color: rgb(var(--muted)); }
+			.related-card strong { line-height: 1.35; }
+			.related-card p { margin: 0; font-size: 0.82rem; line-height: 1.55; color: rgb(var(--ink-soft)); }
 			.back {
 				display: inline-flex; align-items: center; gap: 0.4rem;
 				margin: 4rem 0 0;
@@ -428,7 +420,6 @@ const topicNames = topicEntries.map((topic) => topic.data.title);
 			.back .arrow { transition: transform 0.4s var(--ease); display: inline-block; }
 			.back:hover .arrow { transform: translateX(-6px); }
 
-			/* ----- TOC sidebar ----- */
 			.toc-aside {
 				position: sticky;
 				top: 96px;
@@ -462,11 +453,33 @@ const topicNames = topicEntries.map((topic) => topic.data.title);
 				transition: color 0.3s var(--ease), border-color 0.3s var(--ease), padding-left 0.3s var(--ease);
 			}
 			.toc-nav a:hover { color: rgb(var(--ink)); }
-			.toc-nav a.active {
-				color: rgb(var(--accent));
-				border-left-color: rgb(var(--accent));
-				font-weight: 500;
+			.toc-nav a.active { color: rgb(var(--accent)); border-left-color: rgb(var(--accent)); font-weight: 500; }
+
+			.post-nav {
+				display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+				margin: 4rem 0 0;
 			}
+			.post-nav .nav-card {
+				display: flex; flex-direction: column; gap: 0.5rem;
+				padding: 1.1rem 1.2rem;
+				border: 1px solid rgb(var(--line));
+				border-radius: var(--radius-sm);
+				color: rgb(var(--ink));
+				transition: border-color .3s var(--ease), transform .3s var(--ease), background .3s var(--ease);
+			}
+			.post-nav .nav-card:hover { border-color: rgba(var(--ink), 0.25); background: rgba(var(--bg-soft), 0.6); }
+			.post-nav .next { text-align: right; }
+			.post-nav .dir {
+				font-family: var(--font-mono);
+				font-size: 0.72rem; letter-spacing: 0.12em;
+				color: rgb(var(--muted));
+				text-transform: uppercase;
+			}
+			.post-nav .t { font-family: var(--font-display); font-size: 1.05rem; line-height: 1.4; color: rgb(var(--ink)); }
+			.post-nav .nav-card:hover .t { color: rgb(var(--accent)); }
+			.post-nav .arrow { display: inline-block; transition: transform .3s var(--ease); }
+			.post-nav .prev:hover .arrow { transform: translateX(-4px); }
+			.post-nav .next:hover .arrow { transform: translateX(4px); }
 
 			@media (max-width: 1024px) {
 				.post-grid { grid-template-columns: 1fr; gap: 2rem; }
@@ -482,41 +495,9 @@ const topicNames = topicEntries.map((topic) => topic.data.title);
 				.series-panel a { grid-template-columns: 32px 1fr; }
 				.series-panel em { grid-column: 2; }
 				.related-grid { grid-template-columns: 1fr; }
+				.post-nav { grid-template-columns: 1fr; }
+				.post-nav .next { text-align: left; }
 			}
-
-			.post-nav {
-				display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
-				margin: 4rem 0 0;
-			}
-			.post-nav .nav-card {
-				display: flex; flex-direction: column; gap: 0.5rem;
-				padding: 1.1rem 1.2rem;
-				border: 1px solid rgb(var(--line));
-				border-radius: var(--radius-sm);
-				color: rgb(var(--ink));
-				transition: border-color .3s var(--ease), transform .3s var(--ease), background .3s var(--ease);
-			}
-			.post-nav .nav-card:hover {
-				border-color: rgba(var(--ink), 0.25);
-				background: rgba(var(--bg-soft), 0.6);
-			}
-			.post-nav .next { text-align: right; }
-			.post-nav .dir {
-				font-family: var(--font-mono);
-				font-size: 0.72rem; letter-spacing: 0.12em;
-				color: rgb(var(--muted));
-				text-transform: uppercase;
-			}
-			.post-nav .t {
-				font-family: var(--font-display);
-				font-size: 1.05rem; line-height: 1.4;
-				color: rgb(var(--ink));
-			}
-			.post-nav .nav-card:hover .t { color: rgb(var(--accent)); }
-			.post-nav .arrow { display: inline-block; transition: transform .3s var(--ease); }
-			.post-nav .prev:hover .arrow { transform: translateX(-4px); }
-			.post-nav .next:hover .arrow { transform: translateX(4px); }
-			@media (max-width: 720px) { .post-nav { grid-template-columns: 1fr; } .post-nav .next { text-align: left; } }
 		</style>
 	</body>
 </html>

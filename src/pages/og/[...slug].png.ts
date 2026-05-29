@@ -1,21 +1,22 @@
 import type { APIRoute } from 'astro';
-import { getCollection } from 'astro:content';
 import { ImageResponse } from '@vercel/og';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { SITE_TITLE } from '../../consts';
+import { getPublicBlogPosts, getSiteSettings, type BlogEntry } from '../../lib/content';
+
+export const prerender = true;
 
 const fontData = await fs.readFile(
 	path.join(process.cwd(), 'node_modules/noto-fontface-cjk-jp/fonts/Noto/NotoSansCJKjp-Regular.otf'),
 );
 
 export async function getStaticPaths() {
-	const posts = (await getCollection('blog')).filter((p) => !p.data.draft);
-	return posts.map((p) => ({ params: { slug: p.id }, props: p }));
+	const [posts, settings] = await Promise.all([getPublicBlogPosts(), getSiteSettings()]);
+	return posts.map((post) => ({ params: { slug: post.id }, props: {post, siteTitle: settings.title} }));
 }
 
 export const GET: APIRoute = async ({ props }) => {
-	const post: any = props;
+	const {post, siteTitle} = props as {post: BlogEntry; siteTitle: string};
 	const { title, description, pubDate } = post.data;
 	const dateStr = new Date(pubDate).toISOString().slice(0, 10);
 
@@ -50,7 +51,7 @@ export const GET: APIRoute = async ({ props }) => {
 							},
 							children: [
 								{ type: 'div', props: { style: { width: 12, height: 12, borderRadius: 999, background: '#da5629' } } },
-								{ type: 'div', props: { children: SITE_TITLE } },
+								{ type: 'div', props: { children: siteTitle } },
 							],
 						},
 					},
@@ -64,7 +65,7 @@ export const GET: APIRoute = async ({ props }) => {
 									props: {
 										style: {
 											fontSize: 64, lineHeight: 1.15, color: '#111',
-											fontWeight: 600, letterSpacing: -1, marginBottom: 24,
+											fontWeight: 600, letterSpacing: 0, marginBottom: 24,
 											display: 'flex',
 										},
 										children: title,

@@ -1,32 +1,15 @@
 # ADR 0002: 搜索索引使用 Pagefind
 
-## Status
+## 状态
 
-Accepted
+Accepted，5.0 后继续有效。
 
-## Context
+## 决策
 
-博客是纯静态站点，需要中文内容可搜索，同时不引入服务端搜索。v2.0 已经接入 Pagefind，并在 `postbuild` 阶段生成索引。
+站内搜索继续使用 Pagefind。虽然 5.0 已经支持 SSR 和 Sanity 后台，但公开页面仍然预渲染，Pagefind 可以继续在构建后扫描静态输出。
 
-## Decision
+## 影响
 
-继续使用 Pagefind 作为站内搜索方案。
-
-- 构建命令使用 `npm.cmd run build`。
-- `postbuild` 执行 `pagefind --site dist`。
-- 前端搜索组件按需加载 `/pagefind/pagefind.js`。
-- 文章正文用 `data-pagefind-body` 标记索引范围。
-
-## Consequences
-
-优点：
-
-- 不需要服务端。
-- 构建后产物可部署到任意静态平台。
-- 客户端按需加载搜索逻辑。
-
-代价：
-
-- 构建产物变大。
-- 直接运行 `astro build` 会跳过索引生成。
-- 搜索元信息需要通过页面 markup 额外维护。
+- `postbuild` 执行 `scripts/run-pagefind.mjs`。
+- 搜索弹窗按需加载 `/pagefind/pagefind.js`。
+- 草稿预览页面使用 `data-pagefind-ignore`，不进入搜索索引。

@@ -3,20 +3,22 @@ import BaseHead from '../../components/BaseHead.astro';
 import Effects from '../../components/Effects.astro';
 import Footer from '../../components/Footer.astro';
 import Header from '../../components/Header.astro';
-import { SITE_TITLE } from '../../consts';
-import { entriesForSeries, getPublicSeries, getSearchableEntries } from '../../lib/content';
+import { entriesForSeries, getPublicSeries, getSearchableEntries, getSiteSettings } from '../../lib/content';
 
+export const prerender = true;
+
+const settings = await getSiteSettings();
 const [series, entries] = await Promise.all([getPublicSeries(), getSearchableEntries()]);
 ---
 
 <!doctype html>
 <html lang="zh-CN">
 	<head>
-		<BaseHead title={`系列 — ${SITE_TITLE}`} description="按阅读路径组织的连续内容。" />
+		<BaseHead title={`系列 · ${settings.title}`} description="按阅读路径组织的连续内容。" siteTitle={settings.title} defaultOgImage={settings.defaultOgImage} />
 	</head>
 	<body>
 		<Effects />
-		<Header />
+		<Header siteTitle={settings.title} />
 		<main>
 			<section class="hero">
 				<p class="eyebrow reveal">阅读路径</p>
@@ -38,7 +40,7 @@ const [series, entries] = await Promise.all([getPublicSeries(), getSearchableEnt
 				})}
 			</section>
 		</main>
-		<Footer />
+		<Footer siteTitle={settings.title} />
 	</body>
 </html>
 
@@ -46,11 +48,7 @@ const [series, entries] = await Promise.all([getPublicSeries(), getSearchableEnt
 	.hero { padding: 2rem 0 4rem; max-width: 760px; }
 	.hero h1 em { font-style: italic; color: rgb(var(--accent)); }
 	.lede { font-size: 1.05rem; color: rgb(var(--ink-soft)); }
-	.series-grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 1.25rem;
-	}
+	.series-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
 	.series-card {
 		display: flex;
 		flex-direction: column;
@@ -58,12 +56,7 @@ const [series, entries] = await Promise.all([getPublicSeries(), getSearchableEnt
 		padding: 1.6rem;
 		color: rgb(var(--ink));
 	}
-	.num, .count {
-		font-family: var(--font-mono);
-		font-size: 0.74rem;
-		color: rgb(var(--muted));
-		letter-spacing: 0.08em;
-	}
+	.num, .count { font-family: var(--font-mono); font-size: 0.74rem; color: rgb(var(--muted)); letter-spacing: 0.08em; }
 	.num { color: rgb(var(--accent)); }
 	.series-card h2 { margin: 1rem 0 0.65rem; font-size: 1.55rem; }
 	.series-card p { margin: 0; flex: 1; color: rgb(var(--ink-soft)); }

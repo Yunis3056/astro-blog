@@ -3,13 +3,19 @@ import { SITE_TITLE } from '../consts';
 import HeaderLink from './HeaderLink.astro';
 import Search from './Search.astro';
 import ThemeToggle from './ThemeToggle.astro';
+
+interface Props {
+	siteTitle?: string;
+}
+
+const {siteTitle = SITE_TITLE} = Astro.props;
 ---
 
 <header>
 	<nav aria-label="主导航">
 		<a class="brand magnetic" href="/" data-magnetic="0.25">
 			<span class="dot"></span>
-			<span>{SITE_TITLE}</span>
+			<span>{siteTitle}</span>
 		</a>
 		<div class="internal-links">
 			<HeaderLink href="/">首页</HeaderLink>
@@ -50,7 +56,7 @@ import ThemeToggle from './ThemeToggle.astro';
 		display: inline-flex; align-items: center; gap: 0.6rem;
 		font-family: var(--font-display);
 		font-size: 1.05rem; font-weight: 500;
-		letter-spacing: -0.01em;
+		letter-spacing: 0;
 		color: rgb(var(--ink));
 	}
 	.brand .dot {

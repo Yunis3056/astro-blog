@@ -1,19 +1,21 @@
 ---
-import type { CollectionEntry } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Effects from '../../components/Effects.astro';
 import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
-import { SITE_TITLE } from '../../consts';
 import {
 	entriesForTopic,
 	getPublicTopics,
 	getSearchableEntries,
+	getSiteSettings,
 	hrefForEntry,
 	labelForEntry,
 	type SearchableEntry,
+	type TopicEntry,
 } from '../../lib/content';
+
+export const prerender = true;
 
 export async function getStaticPaths() {
 	const [topics, entries] = await Promise.all([getPublicTopics(), getSearchableEntries()]);
@@ -24,19 +26,25 @@ export async function getStaticPaths() {
 }
 
 const { topic, entries } = Astro.props as {
-	topic: CollectionEntry<'topics'>;
+	topic: TopicEntry;
 	entries: SearchableEntry[];
 };
+const settings = await getSiteSettings();
 ---
 
 <!doctype html>
 <html lang="zh-CN">
 	<head>
-		<BaseHead title={`${topic.data.title} — 专题 — ${SITE_TITLE}`} description={topic.data.description} />
+		<BaseHead
+			title={`${topic.data.title} · 专题 · ${settings.title}`}
+			description={topic.data.description}
+			siteTitle={settings.title}
+			defaultOgImage={settings.defaultOgImage}
+		/>
 	</head>
 	<body>
 		<Effects />
-		<Header />
+		<Header siteTitle={settings.title} />
 		<main>
 			<section class="hero">
 				<p class="eyebrow reveal"><a href="/topics/">← 返回专题</a></p>
@@ -59,18 +67,14 @@ const { topic, entries } = Astro.props as {
 				))}
 			</section>
 		</main>
-		<Footer />
+		<Footer siteTitle={settings.title} />
 	</body>
 </html>
 
 <style>
 	.hero { padding: 2rem 0 4rem; max-width: 760px; }
 	.lede { font-size: 1.08rem; color: rgb(var(--ink-soft)); }
-	.content-list {
-		display: flex;
-		flex-direction: column;
-		border-top: 1px solid rgb(var(--line));
-	}
+	.content-list { display: flex; flex-direction: column; border-top: 1px solid rgb(var(--line)); }
 	.row {
 		display: grid;
 		grid-template-columns: 90px minmax(0, 1fr) 120px;
@@ -81,11 +85,7 @@ const { topic, entries } = Astro.props as {
 		color: rgb(var(--ink));
 	}
 	.row:hover h2 { color: rgb(var(--accent)); }
-	.type, .date {
-		font-family: var(--font-mono);
-		font-size: 0.74rem;
-		color: rgb(var(--muted));
-	}
+	.type, .date { font-family: var(--font-mono); font-size: 0.74rem; color: rgb(var(--muted)); }
 	.date { text-align: right; }
 	.row h2 { margin: 0 0 0.35rem; font-size: 1.25rem; transition: color 0.3s var(--ease); }
 	.row p { margin: 0; font-size: 0.9rem; color: rgb(var(--ink-soft)); }

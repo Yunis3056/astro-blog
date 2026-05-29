@@ -1,35 +1,39 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Effects from '../../components/Effects.astro';
 import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
-import { SITE_TITLE } from '../../consts';
+import { getPublicBlogPosts, getSiteSettings, type BlogEntry } from '../../lib/content';
+
+export const prerender = true;
 
 export async function getStaticPaths() {
-	const posts = (await getCollection('blog')).filter((p) => !p.data.draft);
+	const posts = await getPublicBlogPosts();
 	const tags = new Set<string>();
-	posts.forEach((p) => p.data.tags?.forEach((t) => tags.add(t)));
+	posts.forEach((post) => post.data.tags.forEach((tag) => tags.add(tag)));
 	return Array.from(tags).map((tag) => ({
 		params: { tag },
 		props: {
 			tag,
 			posts: posts
-				.filter((p) => p.data.tags?.includes(tag))
+				.filter((post) => post.data.tags.includes(tag))
 				.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()),
 		},
 	}));
 }
 
-const { tag, posts } = Astro.props;
+const { tag, posts } = Astro.props as {tag: string; posts: BlogEntry[]};
+const settings = await getSiteSettings();
 ---
 <!doctype html>
 <html lang="zh-CN">
-	<head><BaseHead title={`${tag} — ${SITE_TITLE}`} description={`所有标记为 ${tag} 的文章。`} /></head>
+	<head>
+		<BaseHead title={`${tag} · ${settings.title}`} description={`所有标记为 ${tag} 的文章。`} siteTitle={settings.title} defaultOgImage={settings.defaultOgImage} />
+	</head>
 	<body>
 		<Effects />
-		<Header />
+		<Header siteTitle={settings.title} />
 		<main>
 			<section class="hero">
 				<p class="eyebrow reveal"><a href="/tags/">← 返回标签云</a></p>
@@ -48,8 +52,8 @@ const { tag, posts } = Astro.props;
 								<div class="row-main">
 									<h2 class="row-title">{post.data.title}</h2>
 									<p class="row-desc">{post.data.description}</p>
-									{post.data.tags && post.data.tags.length > 0 && (
-										<div class="row-tags">{post.data.tags.map((t) => <span class="row-chip">{t}</span>)}</div>
+									{post.data.tags.length > 0 && (
+										<div class="row-tags">{post.data.tags.map((tag) => <span class="row-chip">{tag}</span>)}</div>
 									)}
 								</div>
 								<span class="row-arrow" aria-hidden="true">→</span>
@@ -59,7 +63,7 @@ const { tag, posts } = Astro.props;
 				</ul>
 			</section>
 		</main>
-		<Footer />
+		<Footer siteTitle={settings.title} />
 	</body>
 </html>
 
@@ -67,7 +71,6 @@ const { tag, posts } = Astro.props;
 	.hero { padding: 2rem 0 4rem; max-width: 720px; }
 	.hero h1 em { font-style: italic; color: rgb(var(--accent)); }
 	.lede { color: rgb(var(--ink-soft)); }
-
 	.post-feed { list-style: none; margin: 0; padding: 0; }
 	.post-feed li { border-top: 1px solid rgb(var(--line)); }
 	.post-feed li:last-child { border-bottom: 1px solid rgb(var(--line)); }
@@ -84,12 +87,6 @@ const { tag, posts } = Astro.props;
 	.row-title { margin: 0 0 0.35rem; font-size: 1.4rem; transition: color 0.4s var(--ease); }
 	.row-desc { margin: 0 0 0.6rem; color: rgb(var(--ink-soft)); font-size: 0.95rem; }
 	.row-arrow { font-size: 1.2rem; color: rgb(var(--muted)); transition: transform 0.4s var(--ease), color 0.4s var(--ease); text-align: right; }
-	@media (max-width: 720px) {
-		.row { grid-template-columns: 1fr; gap: 0.8rem; padding: 1.2rem 0; }
-		.row-meta { flex-direction: row; gap: 1rem; }
-		.row-arrow { display: none; }
-	}
-
 	.row-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.6rem; }
 	.row-chip {
 		display: inline-flex; align-items: center;
@@ -99,5 +96,10 @@ const { tag, posts } = Astro.props;
 		color: rgb(var(--ink-soft));
 		background: rgba(var(--bg-soft), 0.75);
 		border: 1px solid rgba(var(--line), 0.95);
+	}
+	@media (max-width: 720px) {
+		.row { grid-template-columns: 1fr; gap: 0.8rem; padding: 1.2rem 0; }
+		.row-meta { flex-direction: row; gap: 1rem; }
+		.row-arrow { display: none; }
 	}
 </style>

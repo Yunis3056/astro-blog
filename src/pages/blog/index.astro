@@ -1,26 +1,26 @@
 ---
-import { Image } from 'astro:assets';
-import { getCollection } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Effects from '../../components/Effects.astro';
 import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
-import { SITE_TITLE } from '../../consts';
+import { getPublicBlogPosts, getSiteSettings } from '../../lib/content';
+import { sanityImageAlt, sanityImageUrl } from '../../lib/sanity/image';
 
-const posts = (await getCollection('blog')).filter((p) => !p.data.draft).sort(
-	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
-);
+export const prerender = true;
+
+const settings = await getSiteSettings();
+const posts = await getPublicBlogPosts();
 ---
 
 <!doctype html>
 <html lang="zh-CN">
 	<head>
-		<BaseHead title={`文章 — ${SITE_TITLE}`} description="Yunis 的博客文章归档。" />
+		<BaseHead title={`文章 · ${settings.title}`} description="Yunis 的博客文章归档。" siteTitle={settings.title} defaultOgImage={settings.defaultOgImage} />
 	</head>
 	<body>
 		<Effects />
-		<Header />
+		<Header siteTitle={settings.title} />
 		<main>
 			<section class="page-heading">
 				<p class="eyebrow reveal">归档</p>
@@ -30,33 +30,36 @@ const posts = (await getCollection('blog')).filter((p) => !p.data.draft).sort(
 
 			<section>
 				<ul class="post-feed">
-					{posts.map((post, i) => (
-						<li class="reveal" style={`--reveal-delay: ${i * 80}ms`}>
-							<a class="row" href={`/blog/${post.id}/`}>
-								<div class="row-meta">
-									<span class="num">{String(i + 1).padStart(2, '0')}</span>
-									<FormattedDate date={post.data.pubDate} />
-								</div>
-								<div class="row-main">
-									<h2 class="row-title">{post.data.title}</h2>
-									<p class="row-desc">{post.data.description}</p>
-									{post.data.tags && post.data.tags.length > 0 && (
-										<div class="row-tags">{post.data.tags.map((t) => <span class="row-chip">{t}</span>)}</div>
-									)}
-								</div>
-								{post.data.heroImage && (
-									<div class="row-thumb">
-										<Image width={400} height={260} src={post.data.heroImage} alt={post.data.title} />
+					{posts.map((post, i) => {
+						const thumb = post.data.heroImage ? sanityImageUrl(post.data.heroImage, {width: 420, height: 260, quality: 78}) : '';
+						return (
+							<li class="reveal" style={`--reveal-delay: ${i * 80}ms`}>
+								<a class="row" href={`/blog/${post.id}/`}>
+									<div class="row-meta">
+										<span class="num">{String(i + 1).padStart(2, '0')}</span>
+										<FormattedDate date={post.data.pubDate} />
 									</div>
-								)}
-								<span class="row-arrow" aria-hidden="true">→</span>
-							</a>
-						</li>
-					))}
+									<div class="row-main">
+										<h2 class="row-title">{post.data.title}</h2>
+										<p class="row-desc">{post.data.description}</p>
+										{post.data.tags.length > 0 && (
+											<div class="row-tags">{post.data.tags.map((tag) => <span class="row-chip">{tag}</span>)}</div>
+										)}
+									</div>
+									{thumb && (
+										<div class="row-thumb">
+											<img width="400" height="260" src={thumb} alt={sanityImageAlt(post.data.heroImage, post.data.title)} loading="lazy" decoding="async" />
+										</div>
+									)}
+									<span class="row-arrow" aria-hidden="true">→</span>
+								</a>
+							</li>
+						);
+					})}
 				</ul>
 			</section>
 		</main>
-		<Footer />
+		<Footer siteTitle={settings.title} />
 	</body>
 </html>
 
@@ -64,11 +67,9 @@ const posts = (await getCollection('blog')).filter((p) => !p.data.draft).sort(
 	.page-heading { padding: 2rem 0 4rem; }
 	.page-heading h1 em { font-style: italic; color: rgb(var(--accent)); }
 	.lede { max-width: 600px; color: rgb(var(--ink-soft)); font-size: 1.05rem; }
-
 	.post-feed { list-style: none; margin: 0; padding: 0; }
 	.post-feed li { border-top: 1px solid rgb(var(--line)); }
 	.post-feed li:last-child { border-bottom: 1px solid rgb(var(--line)); }
-
 	.row {
 		display: grid;
 		grid-template-columns: 160px 1fr 200px 32px;
@@ -89,37 +90,13 @@ const posts = (await getCollection('blog')).filter((p) => !p.data.draft).sort(
 	.row:hover .row-arrow { transform: translateX(6px); color: rgb(var(--accent)); }
 	.row:hover .row-title { color: rgb(var(--accent)); }
 	.row:hover .row-thumb img { transform: scale(1.05); }
-
 	.row-meta { display: flex; flex-direction: column; gap: 0.4rem; color: rgb(var(--muted)); font-size: 0.85rem; }
 	.num { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.1em; }
-
-	.row-title {
-		margin: 0 0 0.35rem;
-		font-size: 1.6rem; line-height: 1.2;
-		transition: color 0.4s var(--ease);
-	}
+	.row-title { margin: 0 0 0.35rem; font-size: 1.6rem; line-height: 1.2; transition: color 0.4s var(--ease); }
 	.row-desc { margin: 0; color: rgb(var(--ink-soft)); font-size: 0.95rem; }
-
 	.row-thumb { overflow: hidden; border-radius: var(--radius-sm); }
-	.row-thumb img {
-		display: block; width: 100%; height: 130px;
-		object-fit: cover; transition: transform 0.7s var(--ease-out);
-	}
-
-	.row-arrow {
-		font-size: 1.2rem; color: rgb(var(--muted));
-		transition: transform 0.4s var(--ease), color 0.4s var(--ease);
-		text-align: right;
-	}
-
-	@media (max-width: 820px) {
-		.row { grid-template-columns: 1fr; gap: 0.8rem; padding: 1.5rem 0; }
-		.row:hover { padding-left: 0; }
-		.row-thumb { display: none; }
-		.row-arrow { display: none; }
-		.row-meta { flex-direction: row; gap: 1rem; }
-	}
-
+	.row-thumb img { display: block; width: 100%; height: 130px; object-fit: cover; transition: transform 0.7s var(--ease-out); }
+	.row-arrow { font-size: 1.2rem; color: rgb(var(--muted)); transition: transform 0.4s var(--ease), color 0.4s var(--ease); text-align: right; }
 	.row-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.7rem; }
 	.row-chip {
 		display: inline-flex; align-items: center;
@@ -129,5 +106,12 @@ const posts = (await getCollection('blog')).filter((p) => !p.data.draft).sort(
 		color: rgb(var(--ink-soft));
 		background: rgba(var(--bg-soft), 0.75);
 		border: 1px solid rgba(var(--line), 0.95);
+	}
+	@media (max-width: 820px) {
+		.row { grid-template-columns: 1fr; gap: 0.8rem; padding: 1.5rem 0; }
+		.row:hover { padding-left: 0; }
+		.row-thumb { display: none; }
+		.row-arrow { display: none; }
+		.row-meta { flex-direction: row; gap: 1rem; }
 	}
 </style>

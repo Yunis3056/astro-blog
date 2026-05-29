@@ -5,17 +5,21 @@ import BaseHead from '../components/BaseHead.astro';
 import Effects from '../components/Effects.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
-import { SITE_TITLE } from '../consts';
+import { getSiteSettings } from '../lib/content';
+
+export const prerender = true;
+
+const settings = await getSiteSettings();
 ---
 
 <!doctype html>
 <html lang="zh-CN">
 	<head>
-		<BaseHead title={`关于 — ${SITE_TITLE}`} description="关于 Yunis 的博客和站点规划。" image={AboutHeroImage} />
+		<BaseHead title={`关于 · ${settings.title}`} description="关于 Yunis 的博客和站点规划。" image={AboutHeroImage} siteTitle={settings.title} />
 	</head>
 	<body>
 		<Effects />
-		<Header />
+		<Header siteTitle={settings.title} />
 		<main>
 			<section class="hero">
 				<p class="eyebrow reveal">关于</p>
@@ -28,9 +32,9 @@ import { SITE_TITLE } from '../consts';
 			<section class="about-grid">
 				<div class="copy reveal">
 					<h2>站点</h2>
-					<p>用 Astro 搭建，Markdown / MDX 写作。后续会逐步补充标签、搜索、评论、阅读清单和项目详情页。</p>
+					<p>前台使用 Astro，内容由 Sanity 在线管理。文章、笔记、项目、专题和系列都可以在后台写作、预览和发布。</p>
 					<h2>写作原则</h2>
-					<p>少写空话；多留下可复用的判断依据和操作步骤。每篇尽量回答一个具体问题。</p>
+					<p>少写空话，多留下可复用的判断依据和操作步骤。每篇尽量回答一个具体问题。</p>
 					<h2>方向</h2>
 					<p>Web 开发、自动化工具、产品实践、学习笔记。</p>
 				</div>
@@ -40,12 +44,12 @@ import { SITE_TITLE } from '../consts';
 					</div>
 					<div class="card-info">
 						<p><strong>仓库</strong></p>
-						<p><a href="https://github.com/Yunis3056/astro-blog" target="_blank" rel="noreferrer">Yunis3056/astro-blog ↗</a></p>
+						<p><a href="https://github.com/Yunis3056/astro-blog" target="_blank" rel="noreferrer">Yunis3056/astro-blog →</a></p>
 					</div>
 				</div>
 			</section>
 		</main>
-		<Footer />
+		<Footer siteTitle={settings.title} />
 	</body>
 </html>
 
@@ -53,7 +57,6 @@ import { SITE_TITLE } from '../consts';
 	.hero { padding: 2rem 0 4rem; max-width: 760px; }
 	.hero h1 em { font-style: italic; color: rgb(var(--accent)); }
 	.lede { font-size: 1.1rem; color: rgb(var(--ink-soft)); }
-
 	.about-grid {
 		display: grid;
 		grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
@@ -63,11 +66,7 @@ import { SITE_TITLE } from '../consts';
 	.copy h2 { font-size: 1.3rem; margin: 2rem 0 0.6rem; }
 	.copy h2:first-child { margin-top: 0; }
 	.copy p { color: rgb(var(--ink-soft)); }
-
-	.visual {
-		transition: transform 0.5s var(--ease-out);
-		will-change: transform;
-	}
+	.visual { transition: transform 0.5s var(--ease-out); will-change: transform; }
 	.frame {
 		overflow: hidden;
 		border-radius: var(--radius);
@@ -89,7 +88,6 @@ import { SITE_TITLE } from '../consts';
 	}
 	.card-info p { margin: 0; }
 	.card-info p + p { margin-top: 0.35rem; color: rgb(var(--ink-soft)); }
-
 	@media (max-width: 820px) {
 		.about-grid { grid-template-columns: 1fr; gap: 2rem; }
 	}
